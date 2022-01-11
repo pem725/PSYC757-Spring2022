@@ -1,0 +1,38 @@
+---
+title: "Patrick's Class Notes"
+output: html_notebook
+---
+
+# Chapter 1
+
+Prepare yourself to learn statistics from a different angle.  Also, get ready to learn some skills (and tools).  Those include R, Rstudio, stan, and for the daring, tidyverse.
+
+## Getting started
+
+1. Install R - get the latest version for your platform
+2. Install RStudio - get the **preview** version instead of the standard download.
+3. Install rstan - see [mc-stan.org](https://mc-stan.org) for details
+
+## Getting prepared each week
+
+1. Read the assigned book chapter.  I assume all graduate students read so please do so.
+2. Watch the videos.  If you find an additional loop through the readings helps, I strongly encourage you to watch them.  Richard does a fine job providing further details from his book.
+3. Come prepared to ask questions on Tuesdays.
+4. Come prepared to do some homework together - Tuesdays (occasionally) and Thursdays (always).
+5. Stay ahead of the workflow.  
+6. Check for additional references including the [R code from the book](http://xcelab.net/rmpubs/sr2/code.txt) and the efforts to port that code to more modern tools.  Please consult [Richard's webpage](https://xcelab.net/rm/statistical-rethinking/) for more links.
+
+# Chapter 2
+
+Probability theory requires some work.  
+
+
+# Chapter 3
+
+# Chapter 4
+
+Key points:
+1. Differentiate between observable (data) and unobservable (parameters) variables.
+2. Define each variable in terms of other variables OR in terms of a proability distribution.
+3. The combination from above defines a joint generative model - one that can be used to (a) simulate hypothetical observations and (b) analyze real ones.  This last point is where Bayesian methods take a strong departure from frequentist models.
+
