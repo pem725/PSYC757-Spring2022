@@ -440,7 +440,7 @@ library(rethinking)
 data(Howell1); d <- Howell1; d2 <- d[ d$age >= 18 , ]
 
 # define the average weight, x-bar
-xbar <- mean(d2$weight)
+xbar <- mean(d2$weight) ## AHA!  see my question below.  Nightmares await students here.
 
 # fit model
 m4.3 <- quap(
@@ -561,7 +561,8 @@ mu.link <- function(weight) post$a + post$b*( weight - xbar )
 weight.seq <- seq( from=25 , to=70 , by=1 )
 mu <- sapply( weight.seq , mu.link )
 mu.mean <- apply( mu , 2 , mean )
-mu.CI <- apply( mu , 2 , PI , prob=0.89 )
+mu.PI <- apply( mu , 2 , PI , prob=0.89 )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 ) # pem added
 
 ## R code 4.59
 sim.height <- sim( m4.3 , data=list(weight=weight.seq) )
@@ -596,6 +597,8 @@ sim.height <- sapply( weight.seq , function(weight)
         mean=post$a + post$b*( weight - xbar ) ,
         sd=post$sigma ) )
 height.PI <- apply( sim.height , 2 , PI , prob=0.89 )
+### PEM question here: how does R know what xbar is when it is not specified?
+### ANS:  see code 4.42; Richard defined it above.  ARGH!
 
 ## R code 4.64
 library(rethinking)
@@ -624,6 +627,7 @@ pred_dat <- list( weight_s=weight.seq , weight_s2=weight.seq^2 )
 mu <- link( m4.5 , data=pred_dat )
 mu.mean <- apply( mu , 2 , mean )
 mu.PI <- apply( mu , 2 , PI , prob=0.89 )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 ) # pem added
 sim.height <- sim( m4.5 , data=pred_dat )
 height.PI <- apply( sim.height , 2 , PI , prob=0.89 )
 

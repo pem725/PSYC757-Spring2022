@@ -24,15 +24,125 @@ Prepare yourself to learn statistics from a different angle.  Also, get ready to
 
 # Chapter 2
 
-Probability theory requires some work.  
+Probability theory requires some work.  We will work on a problem together and then solve the chapter problems together on Thursday.  Here are the problems I want us to work on together during the Tuesday lecture period:
 
+## Some fundamentals
+
+[Look here](https://www.statlect.com/) for some useful information during the course.
+
+1. Definitions:
+  - Probability refers to an event (i.e., something happens): $P(A)$
+  - Probability is a number (but it can be qualified later as a qualitative feel) and ranges between 0 and 1:  $0 \le P(A) \le 1$
+  - Rules define how we compute and evaluate probabilities
+2. Probabilities are ratios of counts...
+  - An event occurring count (Numerator)
+  - Total count of observations (Denominator)
+  - Thus: $p = Event_{count} / (Event_{count} + Non-Event_{count})$
+3. Arithmetic on probabilities are easy when...
+  - Events are independent
+  - Total count of observations are readily available
+4. Rules of probability (you will learn these implicitly over time)
+  - Addition Rule: $$P(A or B) = P(A \cup B) = P(A) + P(B) - P(A \cap B)$$
+  - Complementary Rule: $$P(A) + P(A^{\prime}) = 1$$
+  - Conditional Rule: $$P(B, given A) = P(B | A)=P(A \cap B) \cdot P(A)$$
+  - Multiplication Rule: $$P(A and B) = P(A \cap B) = P(A) \cdot P(B|A) $$
+
+## An Example
+
+Let's attack psychological science since we are all in the game now.  We appear to be in a crisis where most if not all our published results are either being retracted or questioned based upon glaring failures to replicate.  If a study fails to replicate, should we be surprised?  And, would this surprise lead us to feel as if we are in crisis?  Here are some numbers:
+
+1. Assumptions
+  - we are all frequentists and employ some form of NHST (e.g., ANOVA, MRC, etc.).
+  - we use a simple probability of 5% error to define "significance" (i.e., $p \le 0.05$).
+  - Expected Base Rate (priors condition):  we only venture where it is safe to venture ($P(H_{ours}) \ge P(H_{alts})$)
+  - Evidence Discovery Rate:  we only test what is readily available to us ($P(D_{ours}) \ge .5$)
+  - True Positive Rate:  we measure with almost perfect validity and precision (a point I shall elaborate upon) but for now, we specify it as a probability ($P(Reject H_0 | H_0 = F) = .99$, aka statistical power or, for our question though...$P(D_{ours} = T | H_{ours}=T) = .99$)
+  - False Positive Rate:  we have a very low false positive rate ($P(D_{ours} = T| H_{ours} = F) \le .01$)
+  - every study is independent of every other study - including our own
+  - subjects are replicates of one another so sample-to-sample variance is zero
+  - Base Rate for $H_{ours}$: there are 100 hypotheses available for the data in question and ours is only one of the 100 including the null ($P(H_{ours}) \approx .02$ or double for each $P(H_{alt}$)
+2. Computations
+  - Use Bayes Theorem with limited information
+  $$P(H_{ours}|D) = \frac{P(D_{ours}|H_{ours}) \cdot P(H_{ours}))}{P(D)}$$
+  $$P(H_{ours}|D) = \frac{.99 * .02}{.5} = 0.0396 \approx 4\%$$
+  - Alternative with full information
+  $$P(H_{ours}|D) = \frac{P(D_{ours}|H_{ours}=T) \cdot P(H_{ours}))}{P(D_{ours}|H_{ours}) \cdot P(H_{ours}) + P(D_{ours}| H_{ours} = F) \cdot (1 - P(H_{ours}))}$$
+  $$P(H_{ours}|D) = \frac{.99 * .02}{(.99 * .02)+(.01 * .98)} = 0.669 \approx 67\%$$
+  - Why the discrepency?
+  Consider Richard's example.  He used $P(D_{ours} | H_{ours} = T) = 0.95$, $P(D_{ours} | H_{ours} = F) = 0.05$, $P(H_{ours}) = 0.01$, gives us:
+  $$P(H_{ours}|D) = \frac{0.95 * 0.01}{(0.95 * 0.01)+(0.05 * 0.99)} = 0.161 \approx 16\%$$
+  - Use your own numbers and see how well you can make the replication crisis seem worse or better.
 
 # Chapter 3
+
+Consider the examples I used above but here I tell a story about natural frequencies relevant to our problem of estimation.  Here goes...
+
+1. 1700 universities with psychology programs and less than half conduct research ($\approx 800$)
+2. Of the 800 programs that conduct research, roughly 10 faculty per department (on average) are active researchers; thus $N_{researchers} \approx 8000$.
+3. 5% of active researchers contribute more than 80% of the research; thus, we can safely say that our real $N_{researchers}$ is about 400.
+4. Of those 400 researchers, each contribute about 5 empirical, peer-reviewed papers each year; thus, these researchers produce 2000 articles each year.
+5. Retraction watch lists 225 articles from 1999 to the present (22 years or roughly 10 articles each year)
+6. Assume for every article found with problems, 9 others exist; thus, 100 articles each year should be a good estimate of fraud.  $N_{fraud}=100$
+7. Those who commit scientific fraud are likely to do so repeatedly and for all their publications.  Thus, not all events are independent and we get an estimate of researchers who commit fraud to be $N_{fraudsters} = N_{researchers}/N_{fraud} = 4$
+
+Use these numbers to tell a story about fraudsters.  Use only the frequencies.
+
 
 # Chapter 4
 
 Key points:
-1. Differentiate between observable (data) and unobservable (parameters) variables.
-2. Define each variable in terms of other variables OR in terms of a proability distribution.
-3. The combination from above defines a joint generative model - one that can be used to (a) simulate hypothetical observations and (b) analyze real ones.  This last point is where Bayesian methods take a strong departure from frequentist models.
 
+1. Differentiate between observable (data) and unobservable (parameters) variables.  Consider the simple MRC model:
+
+$$y = bx + b_0 + \epsilon \tag{full MRC model}$$
+
+$$y = bx + b_0 \tag{deterministic MRC model}$$
+$...$that we rewrite in more explicit form:
+
+$$y_i = \beta (x_i - \bar{x})  + \beta_0$$
+  $...$where$...$
+    $y_i$ and $x_i$ are both observed and $\beta$ and $\beta_0$ are parameters.  
+
+2. Define each variable in terms of other variables OR in terms of a probability distribution.  (see page 96 for all the definitions)
+
+$$y_i \sim \mathcal{N}(\mu_i, \sigma) \tag{The Likelihood}$$
+rewritten in R as: y $\sim$ dnorm(mu, sigma)
+
+$$\mu_i = \beta (x_i-\bar{x}) + \beta_0 \tag{the GLM}$$
+rewritten in R as: mu <- b*x + b0
+
+$$\beta \sim \mathcal{N}(0,4) \tag{beta prior}$$
+rewritten in R as: b $\sim$ dnorm(0,4)
+
+$$\beta_0 \sim \mathcal{N}(200,20) \tag{intercept prior}$$
+rewritten in R as: b0 $\sim$ dnorm(200,20)
+
+$$\sigma \sim Uniform(0,10) \tag{sigma prior}$$
+and finally, rewritten in R as:  sigma $\sim$ dunif(0,10)
+
+See code chunk 4.42 for comparison.
+
+3. The combination from above defines a *joint generative model* - one that can be used to (a) simulate hypothetical observations and (b) analyze real ones.  This last point is where Bayesian methods take a strong departure from frequentist models.  Note the following:
+
+* extract.samples() is a function that helps us create data from the results.
+* precis() is a function that helps us summarize data.frames (and samples)
+* mvrnorm() is a function that allows us to sample conditionally on multiple variables/parameters
+
+The rest of the chapter builds upon these ideas while also introducing the reader to more R details.  If you are new to R, please read these sections carefully.  Here are some highlights and points of interest....
+
+* square brackets $[x]$ or $[x,y]$ are key to subsetting vectors and data.frames, respectively.
+* list and alist are two different but important storage containers.  Know them.
+* rnorm and rlnorm are functions that create random normal and log-normal values.
+* plot your priors and posteriors! Learn base graphics (plot) AND ggplot
+* be careful when reading Richard's explanation of the intercept (esp p 115)
+* polynomial and spline results are tricky in psychological science.  Let's discuss!
+* the code in 4.76 requires you to know one teeny weeny aspect of linear algebra.  I'll elaborate in class.
+
+# Chapter 5
+
+$$A \perp \!\!\! \perp B $$
+Some key terms to consider:
+* spurious relationships
+* confounded relationships
+* multicollinearity
+* 
