@@ -13,12 +13,12 @@
 
 ## Assumption 1:  Birthdays (day of week) are independent events
 ## Assumption 2:  At least one denotes exclusive OR
+## Assumption 3:  Probability of birth each day of week equal (uniform)
 
 ## Notations:
 ##  Let A = Thurs birth for girl one (G1)
 ##  Let B = Thurs birth for girl two (G2)
 ##  Let 2Girls = G1 and G2 being born already 
-
 
 ## Thus, 
 
