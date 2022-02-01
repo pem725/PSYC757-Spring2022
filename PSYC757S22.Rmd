@@ -82,7 +82,7 @@ Let's attack psychological science since we are all in the game now.  We appear 
   - 2E4: Definitions and Intentions of Probability
 * Medium ones:
   - 2M1: Use the following code (revealed after class) to produce the following:
-```{r 2M1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=3, fig.height=3, fig.show='hold', fig.align='center'}
+```{r 2M1, echo=FALSE, message=FALSE, warning=FALSE}
 p_grid <- seq( from=0 , to=1 , length.out=100 )
 # likelihood of 3 water in 3 tosses
 likelihood1 <- dbinom( 3 , size=3 , prob=p_grid ) # note this is for (1)
@@ -103,7 +103,7 @@ plot( posterior3 ~ p_grid , type="l" )
 ```
   
   - 2M2: Use the following code:
-```{r 2M2, echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE, fig.show='hold', fig.align='center', cache.rebuild=FALSE}
+```{r 2M2, echo=FALSE, message=FALSE, warning=FALSE}
 p_grid <- seq( from=0 , to=1 , length.out=100 )
 prior <- ifelse( p_grid < 0.5 , 0 , 1 ) # new prior
 likelihood1 <- dbinom( 3 , size=3 , prob=p_grid ) # note this is for (1)
@@ -123,8 +123,86 @@ plot( posterior3 ~ p_grid , type="l" )
 ```
   
 
-  - 2M3: 
+  - 2M3: Expand Bayes' theorem
+  
+```{r 2M3, echo=FALSE, message=FALSE, warning=FALSE}
+PLgE <- .3 # Prob of land given Earth:  70% water so 30% land
+PLgM <- 1 # Prob of land given Mars:  all land hence no water
 
+## equal priors
+PE <- .5 # priors for Earth
+PM <- .5 # priors for Mars
+
+PEgL <- (PLgE * PE)/((PLgE*PE)+(PLgM*PM))
+PEgL
+```
+  - 2M4: Do this problem at home
+
+```{r 2M4, echo=FALSE, message=FALSE, warning=FALSE}
+c1 <- c("B","B")
+c2 <- c("B","W")
+c3 <- c("W","W")
+
+# 3 cards produce 3 ways for the side shown to be "B"
+
+card.df <- data.frame(cards=1:3,nWaysB1=c(2,1,0),nWaysB2=c(2,0,0))
+
+card.df
+
+# add the second column
+B1ways <- sum(card.df$nWaysB1)
+B2ways <- sum(card.df$nWaysB2)
+B2ways/B1ways
+```
+  
+  - 2M5: Same as before....
+  
+```{r 2M5, echo=FALSE, message=FALSE, warning=FALSE}
+c1 <- c("B","B")
+c2 <- c("B","B")
+c3 <- c("B","W")
+c4 <- c("W","W")
+
+# 3 cards produce 3 ways for the side shown to be "B"
+card.df <- data.frame(cards=1:4,nWaysB1=c(2,2,1,0),nWaysB2=c(2,2,0,0))
+card.df
+
+# add the second column
+B1ways <- sum(card.df$nWaysB1)
+B2ways <- sum(card.df$nWaysB2)
+B2ways/B1ways
+```
+
+  - 2M6: Expand the counting table to include priors
+```{r 2M6, echo=FALSE, message=FALSE, warning=FALSE}
+c1 <- c("B","B")
+c2 <- c("B","W")
+c3 <- c("W","W")
+
+# 3 cards produce 3 ways for the side shown to be "B"
+card.df <- data.frame(cards=1:3,priors=1:3,nWaysB1=c(2,1,0),nWaysB1Xpriors=c(2,2,0),nWaysB2=c(2,0,0))
+card.df
+
+# add the second column
+B1ways <- sum(card.df$nWaysB1Xpriors)
+B2ways <- sum(card.df$nWaysB2)
+B2ways/B1ways
+```
+  - 2M7: Refer to the globe tossing counting table
+```{r 2M7, echo=FALSE, message=FALSE, warning=FALSE}
+c1 <- c("B","B")
+c2 <- c("B","W")
+c3 <- c("W","W")
+
+# 3 cards produce 3 ways for the side shown to be "B"
+card.df <- data.frame(cards=1:3,priors=1:3,nWaysB1=c(2,1,0),nWaysB1Xpriors=c(2,2,0),nWaysB2=c(2,0,0))
+card.df
+
+# add the second column
+B1ways <- sum(card.df$nWaysB1Xpriors)
+B2ways <- sum(card.df$nWaysB2)
+B2ways/B1ways
+```  
 
 # Chapter 3
 
