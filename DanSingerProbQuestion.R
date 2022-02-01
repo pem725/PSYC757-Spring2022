@@ -30,6 +30,30 @@
 ##                    = 7/49 + 7/49 - 2/49
 ##                    = 12/49
 
+### LATE NIGHT REFRAME
+
+## At least one success rule:  P(at least 1 born on Thurs) = 1 - P(non Thurs births)^n
+## where n is the number of trials.  Let's work it out using this formulation:
+
+## Success = Thursday birth
+## Failure = any other birth day of the week = 1 - Success
+## n Trials = 2 girls
+
+PThurs <- 1/7
+nTrials <- 2
+PnotThurs <- 6/7
+
+PAtLeast1Thurs <- 1 - PnotThurs^nTrials
+PAtLeast1Thurs
+
+## Your calculations were correct Dan according to the "At Least Rule"
+
+## Let's try the counting method to make this clear to us all.  I will construct
+## a table to make sense of this problem.
+
+
+
+
 
 # 2. In families with 2 daughters, what's the probability that at least one
 # daughter is named Leila? Let's assume that on average 1 out of every 7 girl is
