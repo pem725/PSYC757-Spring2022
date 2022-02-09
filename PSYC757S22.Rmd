@@ -44,7 +44,7 @@ Probability theory requires some work.  We will work on a problem together and t
 4. Rules of probability (you will learn these implicitly over time)
   - Addition Rule: $$P(A or B) = P(A \cup B) = P(A) + P(B) - P(A \cap B)$$
   - Complementary Rule: $$P(A) + P(A^{\prime}) = 1$$
-  - Conditional Rule: $$P(B, given A) = P(B | A)=P(A \cap B) \cdot P(A)$$
+  - Conditional Rule: $$P(B, given A) = P(B | A)=P(A \cap B) / P(A)$$
   - Multiplication Rule: $$P(A and B) = P(A \cap B) = P(A) \cdot P(B|A) $$
 
 ## An Example
@@ -82,7 +82,7 @@ Let's attack psychological science since we are all in the game now.  We appear 
   - 2E4: Definitions and Intentions of Probability
 * Medium ones:
   - 2M1: Use the following code (revealed after class) to produce the following:
-```{r 2M1, echo=FALSE, message=FALSE, warning=FALSE}
+```{r 2M1, echo=TRUE, message=FALSE, warning=FALSE}
 p_grid <- seq( from=0 , to=1 , length.out=100 )
 # likelihood of 3 water in 3 tosses
 likelihood1 <- dbinom( 3 , size=3 , prob=p_grid ) # note this is for (1)
@@ -103,7 +103,7 @@ plot( posterior3 ~ p_grid , type="l" )
 ```
   
   - 2M2: Use the following code:
-```{r 2M2, echo=FALSE, message=FALSE, warning=FALSE}
+```{r 2M2, echo=TRUE, message=FALSE, warning=FALSE}
 p_grid <- seq( from=0 , to=1 , length.out=100 )
 prior <- ifelse( p_grid < 0.5 , 0 , 1 ) # new prior
 likelihood1 <- dbinom( 3 , size=3 , prob=p_grid ) # note this is for (1)
@@ -125,7 +125,7 @@ plot( posterior3 ~ p_grid , type="l" )
 
   - 2M3: Expand Bayes' theorem
   
-```{r 2M3, echo=FALSE, message=FALSE, warning=FALSE}
+```{r 2M3, echo=TRUE, message=FALSE, warning=FALSE}
 PLgE <- .3 # Prob of land given Earth:  70% water so 30% land
 PLgM <- 1 # Prob of land given Mars:  all land hence no water
 
@@ -138,7 +138,7 @@ PEgL
 ```
   - 2M4: Do this problem at home
 
-```{r 2M4, echo=FALSE, message=FALSE, warning=FALSE}
+```{r 2M4, echo=TRUE, message=FALSE, warning=FALSE}
 c1 <- c("B","B")
 c2 <- c("B","W")
 c3 <- c("W","W")

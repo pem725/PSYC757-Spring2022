@@ -48,6 +48,11 @@ PAtLeast1Thurs
 
 ## Your calculations were correct Dan according to the "At Least Rule"
 
+## Counting method (for future use)
+
+
+
+
 # 2. In families with 2 daughters, what's the probability that at least one
 # daughter is named Leila? Let's assume that on average 1 out of every 7 girl is
 # named Leila, and that two girls from the same family can't have the same name.
