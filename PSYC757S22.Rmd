@@ -514,6 +514,199 @@ The rest of the chapter builds upon these ideas while also introducing the reade
 * polynomial and spline results are tricky in psychological science.  Let's discuss!
 * the code in 4.76 requires you to know one teeny weeny aspect of linear algebra.  I'll elaborate in class.
 
+## Assigned Problems
+
+### Easy Problems
+
+#### 4E1:  In the model definition below, which line is the likelihood?
+Likelihood is the conditional statement on $y_i$
+
+#### 4E2: In the model definition just above, how many parameters are in the posterior distribution?
+Two - $\mu$ and $\sigma$.
+
+#### 4E3: Using the model definition above, write down the appropriate form of Bayes’ theorem that includes the proper likelihood and priors.
+
+Not essential but useful if you want to keep track of the formulae he uses throughout the book.  Here goes...
+
+From Section 4.3.2 (Overthinking: Model definition to Bayes' theorem again.) in the book, take the formula and replace his bits with the bits provided in the example.  Why do you need to know this?  Dunno.  You will never remember it nor will you every engage in integral calculus.  
+
+
+#### 4E4: In the model definition below, which line is the linear model?
+
+The second line.
+
+
+#### 4E5:  In the model definition just above, how many parameters are in the posterior distribution?
+
+Three:  $\alpha$, $\beta$, and $\sigma$.
+
+#### 4M1: For the model definition below, simulate observed y values from the prior (not the posterior).
+
+```{r 4M1}
+mu_prior <- rnorm(1e4, 0, 10)
+sigma_prior <- rexp(1e4, 1)
+h_sim <- rnorm(1e4, mu_prior, sigma_prior)
+dens(h_sim)
+```
+
+
+#### 4M2: Translate the model just above into a quap formula.
+
+```{r 4M2}
+f <- alist(
+  y ~ dnorm(mu, sigma),
+  mu ~ dnorm(0,10),
+  sigma ~ dexp(1)
+)
+```
+
+#### 4M3: Translate the quap model formula below into a mathematical model definition.
+
+$$y_i \sim Normal(\mu, \sigma)$$
+$$\mu = \alpha + \beta x_i $$
+$$\alpha \sim Normal(0,10) $$
+$$\beta \sim Normal(0,1)$$
+$$\sigma \sim Exponential(1)$$
+
+#### 4M4: A sample of students is measured for height each year for 3 years. After the third year, you want to fit a linear regression predicting height using year as a predictor. Write down the mathematical model definition for this regression, using any variable names and priors you choose. Be prepared to defend your choice of priors.
+
+Assume the following model:
+
+
+$$h_{ij} \sim Normal(\mu_{ij}, \sigma)$$
+$$\mu_{ij} = \alpha + \beta(y_i - \bar{y})$$
+$$\alpha \sim Normal(68, 10)$$
+$$\beta \sim Normal(0,10)$$
+$$\sigma \sim Exponential(1)$$
+and in R to simulate:
+
+```{r 4M4}
+n <- 100
+a <- rnorm(n, 68, 10)
+b <- rnorm(n, 0, 10)
+s <- rexp(n, 1)
+y <- 1:3
+ybar <- mean(y)
+h <- matrix(NA, nrow=n, ncol=3)
+for (i in 1:n){
+  for (j in 1:3){
+    h[i,j] <- rnorm(1, a[i] + b[i]*(y[j] - ybar), s[i])
+  }
+}
+plot(NULL, xlim=c(1,3), ylim=range(h), xlab="Year", ylab="Height (inches)")
+
+for(i in 1:n){
+  lines(1:3, h[i,])
+}
+```
+
+Whoops!  Some students are getting shorter.  
+
+#### 4M5: Now suppose I remind you that every student got taller each year. Does this information lead you to change your choice of priors? How?
+
+Yes, of course.  I messed up with my previous formulation and allowed $\beta$ to be negative.  Whoopsi!  OK, a new method...
+
+$$h_{ij} \sim Normal(\mu_{ij}, \sigma)$$
+$$\mu_{ij} = \alpha + \beta(y_i - \bar{y})$$
+$$\alpha \sim Normal(68, 10)$$
+$$\beta \sim Log-Normal(1,0.5)$$
+$$\sigma \sim Exponential(1)$$
+
+
+
+```{r 4M5}
+n <- 100
+a <- rnorm(n, 68, 10)
+b <- rlnorm(n, 1, 0.5)
+s <- rexp(n, 1)
+y <- 1:3
+ybar <- mean(y)
+h <- matrix(NA, nrow=n, ncol=3)
+for (i in 1:n){
+  for (j in 1:3){
+    h[i,j] <- rnorm(1, a[i] + b[i]*(y[j] - ybar), s[i])
+  }
+}
+plot(NULL, xlim=c(1,3), ylim=range(h), xlab="Year", ylab="Height (inches)")
+
+for(i in 1:n){
+  lines(1:3, h[i,])
+}
+
+
+```
+
+#### 4M6: Now suppose I tell you that the variance among heights for students of the same age is never more than 64cm (25 inches). How does this lead you to revise your priors?
+
+$$\sigma \sim Uniform(0,5)$$
+
+because...
+
+$$ \sigma^2 = 25$$
+but...
+
+$$\sigma = \sqrt{25} = 5$$
+
+#### 4M7: Refit model m4.3 from the chapter, but omit the mean weight xbar this time. Compare the new model’s posterior to that of the original model. In particular, look at the covariance among the parameters. What is different? Then compare the posterior predictions of both models.
+
+```{r 4M7}
+library(rethinking)
+data("Howell1")
+d <- Howell1
+d2 <- d[d$age >= 18,]
+m4.3b <- quap(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*weight,
+    a ~ dnorm(178, 20),
+    b ~ dlnorm(0, 1),
+    sigma ~ dunif(0, 50)
+  ), data = d2
+)
+precis(m4.3b)
+```
+
+Compare with the original model of m4.3.  Notice the differences in intercepts?
+
+```{r}
+round(vcov(m4.3b),2)
+```
+```{r}
+round(cov2cor(vcov(m4.3b)),2)
+```
+
+
+#### 4M8: In the chapter, we used 15 knots with the cherry blossom spline. Increase the number of knots and observe what happens to the resulting spline. Then adjust also the width of the prior on the weights—change the standard deviation of the prior and watch what happens. What do you think the combination of knot number and the prior on the weights controls?
+
+```{r 4M8}
+
+```
+
+
+#### 4H1: The weights listed below were recorded in the !Kung census, but heights were not recorded for these individuals. Provide predicted heights and 89% intervals for each of these individuals. That is, fill in the table below, using model-based predictions.
+
+```{r 4H1}
+
+```
+
+
+#### 4H2: Select out all the rows in the Howell1 data with ages below 18 years of age. If you do it right, you should end up with a new data frame with 192 rows in it.
+(a)  Fit a linear regression to these data, using quap. Present and interpret the estimates. For every 10 units of increase in weight, how much taller does the model predict a child gets?
+(b)  Plot the raw data, with height on the vertical axis and weight on the horizontal axis. Superimpose the MAP regression line and 89% interval for the mean. Also superimpose the 89% interval for predicted heights.
+(c)  What aspects of the model fit concern you? Describe the kinds of assumptions you would change, if any, to improve the model. You don’t have to write any new code. Just explain what the model appears to be doing a bad job of, and what you hypothesize would be a better model.
+
+
+#### 4H3: Suppose a colleague of yours, who works on allometry, glances at the practice problems just above. Your colleague exclaims, “That’s silly. Everyone knows that it’s only the logarithm of body weight that scales with height!” Let’s take your colleague’s advice and see what happens.
+
+(a)  Model the relationship between height (cm) and the natural logarithm of weight (log-kg). Use the entire Howell1 data frame, all 544 rows, adults and non-adults. Can you interpret the resulting estimates?
+
+(b)  Begin with this plot: plot( height ~ weight , data=Howell1 ). Then use samples from the quadratic approximate posterior of the model in (a) to superimpose on the plot: (1) the predicted mean height as a function of weight, (2) the 97% interval for the mean, and (3) the 97% interval for predicted heights.
+#### 4H4: Plot the prior predictive distribution for the parabolic polynomial regression model in the chapter. You can modify the code that plots the linear regression prior predictive distribution. Can you modify the prior distributions of α, β1, and β2 so that the prior predictions stay within the biologically reasonable outcome space? That is to say: Do not try to fit the data by hand. But do try to keep the curves consistent with what you know about height and weight, before seeing these exact data.
+#### 4H5: Return to data(cherry_blossoms) and model the association between blossom date (doy) and March temperature (temp). Note that there are many missing values in both variables. You may consider a linear model, a polynomial, or a spline on temperature. How well does temperature trend predict the blossom trend?
+#### 4H6:  Simulate the prior predictive distribution for the cherry blossom spline in the chapter. Adjust the prior on the weights and observe what happens. What do you think the prior on the weights is doing?
+#### 4H7: TYPO - no 7th Hard problem
+#### 4H8: The cherry blossom spline in the chapter used an intercept α, but technically it doesn’t require one. The first basis functions could substitute for the intercept. Try refitting the cherry blossom spline without the intercept. What else about the model do you need to change to make this work?
+
 # Chapter 5
 
 $$A \perp \!\!\! \perp B $$
