@@ -832,6 +832,31 @@ lines(w.seq, pred.ci[2,], lty=2)
 
 
 #### 4H4: Plot the prior predictive distribution for the parabolic polynomial regression model in the chapter. You can modify the code that plots the linear regression prior predictive distribution. Can you modify the prior distributions of α, β1, and β2 so that the prior predictions stay within the biologically reasonable outcome space? That is to say: Do not try to fit the data by hand. But do try to keep the curves consistent with what you know about height and weight, before seeing these exact data.
+
+```{r}
+library(rethinking)
+data("Howell1")
+d <- Howell1
+
+d$weight_s <- scale(d$weight)
+d$weight_s2 <- d$weight_s^2
+
+m4.5 <- quap(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b1*weight_s + b2*weight_s2,
+    a ~ dnorm(178, 20),
+    b1 ~ dlnorm(0,1),
+    b2 ~ dnorm(0,1),
+    sigma ~ dunif(0,50)
+  ), data=d
+)
+set.seed(45)
+prior <- extract.prior(m4.5)
+precis(prior)
+```
+
+
 #### 4H5: Return to data(cherry_blossoms) and model the association between blossom date (doy) and March temperature (temp). Note that there are many missing values in both variables. You may consider a linear model, a polynomial, or a spline on temperature. How well does temperature trend predict the blossom trend?
 #### 4H6:  Simulate the prior predictive distribution for the cherry blossom spline in the chapter. Adjust the prior on the weights and observe what happens. What do you think the prior on the weights is doing?
 #### 4H7: TYPO - no 7th Hard problem
