@@ -678,29 +678,159 @@ round(cov2cor(vcov(m4.3b)),2)
 
 #### 4M8: In the chapter, we used 15 knots with the cherry blossom spline. Increase the number of knots and observe what happens to the resulting spline. Then adjust also the width of the prior on the weights—change the standard deviation of the prior and watch what happens. What do you think the combination of knot number and the prior on the weights controls?
 
-```{r 4M8}
-
-```
+As the number of knots increases, the spline will wiggle more but only up to a point.  The width of the prior weights constrains how much the spline can wiggle.  If you make the prior very wide, then the spline can wiggle a lot if it has enough knots.   The combination of number of knots and the width of the prior weights determines how tightly the spline can match the sample.  
 
 
 #### 4H1: The weights listed below were recorded in the !Kung census, but heights were not recorded for these individuals. Provide predicted heights and 89% intervals for each of these individuals. That is, fill in the table below, using model-based predictions.
 
-```{r 4H1}
+Use the code as it appears in the chapter.
 
+```{r 4H1}
+library(rethinking)
+data("Howell1")
+d <- Howell1
+d2 <- d[d$age >= 18,]
+xbar <- mean(d2$height)
+
+m <- quap(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*(weight - xbar),
+    a ~ dnorm(178, 20),
+    b ~ dlnorm(0,1),
+    sigma ~ dunif(0,50)
+  ), data=d2
+)
+```
+
+then produce samples from the quadratic approximate posterior.  I used Richard's extract.samples but you could also use mvnorm() just the same.
+
+```{r 4H1cont1}
+post <- extract.samples(m)
+str(post)
+```
+
+now we want to plug the weights in the table into this model and average over the posterior to compute predictions for each individual's height.  
+
+```{r 4H1cont2}
+y <- rnorm(1e5, post$a + post$b*(46.95 - xbar), post$sigma)
+mean(y)
+PI(y, prob=0.89)
+```
+
+The code above works by creating a normal distribution sample of 100,000 observations with an assumed weight of 46.95 kg.  We then take the average of that random normal vector and then we get the 89% compatibility interval for height.  
+
+That approach is just for one weight.  We can make this process much easier by using an apply function as follows:
+
+```{r 4H1cont3}
+f <- function(weight){
+  y <- rnorm(1e5, post$a+ post$b*(46.95 - xbar), post$sigma)
+  return(c(mean(y), PI(y,prob=0.89)))
+}
+weight_list <- c(46.95, 43.72, 64.78, 32.59, 54.63)
+result <- sapply(weight_list, f)
+
+## format the output
+
+rtab <- cbind(weight_list, t(result))
+colnames(rtab) <- c("weight","height","5%","94%")
+rtab
 ```
 
 
 #### 4H2: Select out all the rows in the Howell1 data with ages below 18 years of age. If you do it right, you should end up with a new data frame with 192 rows in it.
 (a)  Fit a linear regression to these data, using quap. Present and interpret the estimates. For every 10 units of increase in weight, how much taller does the model predict a child gets?
+
+```{r 4H2a}
+library(rethinking)
+data("Howell1")
+d <- Howell1
+d3 <- d[d$age < 18,]
+str(d3)
+
+xbar <- mean(d3$weight)
+
+m <- quap(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*(weight - xbar),
+    a ~ dnorm(178, 20),
+    b ~ dnorm(0,10),
+    sigma ~ dunif(0,50)
+  ), data=d3
+)
+precis(m)
+```
+
+
 (b)  Plot the raw data, with height on the vertical axis and weight on the horizontal axis. Superimpose the MAP regression line and 89% interval for the mean. Also superimpose the 89% interval for predicted heights.
+
+```{r}
+post <- extract.samples(m)
+w.seq <- seq(1,45,length.out=50)
+mu <- sapply(w.seq, function(z) mean(post$a + post$b*(z-xbar)))
+mu.ci <- sapply(w.seq, function(z) PI(post$a + post$b*(z-xbar),prob=0.89))
+pred.ci <- sapply(w.seq, function(z) PI(rnorm(1e4, post$a + post$b*(z-xbar),post$sigma),prob=0.89))
+
+plot(height ~ weight, data=d3, col=col.alpha("slateblue",0.5), cex=.5)
+lines(w.seq, mu)
+lines(w.seq, mu.ci[1,], lty=2)
+lines(w.seq, mu.ci[2,], lty=2)
+lines(w.seq, pred.ci[1,], lty=2)
+lines(w.seq, pred.ci[2,], lty=2)
+```
+
 (c)  What aspects of the model fit concern you? Describe the kinds of assumptions you would change, if any, to improve the model. You don’t have to write any new code. Just explain what the model appears to be doing a bad job of, and what you hypothesize would be a better model.
+
+Weight and height are not linear.  Look carefully.  
+
 
 
 #### 4H3: Suppose a colleague of yours, who works on allometry, glances at the practice problems just above. Your colleague exclaims, “That’s silly. Everyone knows that it’s only the logarithm of body weight that scales with height!” Let’s take your colleague’s advice and see what happens.
 
 (a)  Model the relationship between height (cm) and the natural logarithm of weight (log-kg). Use the entire Howell1 data frame, all 544 rows, adults and non-adults. Can you interpret the resulting estimates?
 
+```{r}
+library(rethinking)
+data("Howell1")
+d <- Howell1
+logxbar <- mean(log(d$weight))
+
+mlw <- quap(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*(log(weight) - logxbar),
+    a ~ dnorm(178, 20),
+    b ~ dnorm(0,10),
+    sigma ~ dunif(0,50)
+  ), data=d
+)
+precis(mlw)
+```
+
+
+
 (b)  Begin with this plot: plot( height ~ weight , data=Howell1 ). Then use samples from the quadratic approximate posterior of the model in (a) to superimpose on the plot: (1) the predicted mean height as a function of weight, (2) the 97% interval for the mean, and (3) the 97% interval for predicted heights.
+
+```{r}
+
+post <- extract.samples(mlw)
+w.seq <- seq(4,63, length.out=50)
+mu <- sapply(w.seq, function(z) mean(post$a+post$b*(log(z)-logxbar)))
+mu.ci <- sapply(w.seq, function(z) PI(post$a+post$b*(log(z)-logxbar)))
+h.ci <- sapply(w.seq, function(z) PI(rnorm(1e4,post$a+post$b*(log(z)-logxbar),post$sigma)))
+
+plot(height ~ weight, data=d, col=col.alpha("slateblue",0.5), cex=.5)
+lines(w.seq, mu)
+lines(w.seq, mu.ci[1,], lty=2)
+lines(w.seq, mu.ci[2,], lty=2)
+lines(w.seq, pred.ci[1,], lty=2)
+lines(w.seq, pred.ci[2,], lty=2)
+
+```
+
+
+
 #### 4H4: Plot the prior predictive distribution for the parabolic polynomial regression model in the chapter. You can modify the code that plots the linear regression prior predictive distribution. Can you modify the prior distributions of α, β1, and β2 so that the prior predictions stay within the biologically reasonable outcome space? That is to say: Do not try to fit the data by hand. But do try to keep the curves consistent with what you know about height and weight, before seeing these exact data.
 #### 4H5: Return to data(cherry_blossoms) and model the association between blossom date (doy) and March temperature (temp). Note that there are many missing values in both variables. You may consider a linear model, a polynomial, or a spline on temperature. How well does temperature trend predict the blossom trend?
 #### 4H6:  Simulate the prior predictive distribution for the cherry blossom spline in the chapter. Adjust the prior on the weights and observe what happens. What do you think the prior on the weights is doing?
