@@ -542,8 +542,10 @@ Three:  $\alpha$, $\beta$, and $\sigma$.
 
 #### 4M1: For the model definition below, simulate observed y values from the prior (not the posterior).
 
-```{r 4M1}
+```{r 4M1, echo=TRUE}
+library(rethinking)
 mu_prior <- rnorm(1e4, 0, 10)
+dens(mu_prior)
 sigma_prior <- rexp(1e4, 1)
 h_sim <- rnorm(1e4, mu_prior, sigma_prior)
 dens(h_sim)
@@ -690,7 +692,7 @@ library(rethinking)
 data("Howell1")
 d <- Howell1
 d2 <- d[d$age >= 18,]
-xbar <- mean(d2$height)
+xbar <- mean(d2$weight)
 
 m <- quap(
   alist(
@@ -869,4 +871,14 @@ Some key terms to consider:
 * spurious relationships
 * confounded relationships
 * multicollinearity
-* 
+
+## Useful functions to know in the rethinking package
+
+link()
+sim()
+PI()
+HPDI()
+extract.prior()
+precis()
+
+Let's discuss them so you know what they do and why they might be useful even with STAN code and shiny-stan.
