@@ -1064,7 +1064,7 @@ $$\mu_i = \alpha + \beta_L L_i + \beta_P P_i $$
 $$P_i \sim Normal(\mu_i, \sigma)$$
 $$\mu_i = \alpha + \beta_F F_i + \beta_S S_i$$
 
-with both $\beta_F$ and $\beta_S$ zero.  Where the question can be a bit difficult is interpreting the independence of funding and size of lab are negligible but together they form a positive prediction.  If they are independent but together produce a strong predictive model then we can see both $\beta$'s being small but not necessarily significant while the total predictive validity of the model is sufficient to justify its use (i.e., small residuals with no outliers).  Even if they are independent, we could postulate an interaction (something we have yet to discuss in the class).  An interaction would indicate that neither alone are important but together they form a composite effect that reduces the residuals in our prediction model.  Think of this moderated effect as an alternative variable produced by multiplying the two predictors and, as such, requiring the specification of another $\beta_{FxS}$ that would account for the interaction.
+with both $\beta_F$ and $\beta_S$ non-zero but negligible.  Where the question can be a bit difficult is interpreting the independence of funding and size of lab are negligible but together they form a positive prediction.  If they are independent but together produce a strong predictive model then we can see both $\beta$'s being small but not necessarily significant while the total predictive validity of the model is sufficient to justify its use (i.e., small residuals with no outliers).  Even if they are independent, we could postulate an interaction (something we have yet to discuss in the class).  An interaction would indicate that neither alone are important but together they form a composite effect that reduces the residuals in our prediction model.  Think of this moderated effect as an alternative variable produced by multiplying the two predictors and, as such, requiring the specification of another $\beta_{FxS}$ that would account for the interaction.
 
 #### 5E4:  Suppose you have a single categorical predictor with 4 levels (unique values), labeled A, B, C and D. Let Ai be an indicator variable that is 1 where case i is in category A. Also suppose Bi, Ci, and Di for the other categories. Now which of the following linear models are inferentially equivalent ways to include the categorical variable in a regression? Models are inferentially equivalent when it’s possible to compute one posterior distribution from the posterior distribution of another model.
 
@@ -1107,11 +1107,6 @@ LDStab <- LDStab[,c(1,4)]
 LDStab$LDS <- as.numeric(gsub("[\\%,]", "",LDStab$LDS))
 d <- merge(d,LDStab,by.x="Location",by.y="State",all.x=T)
 
-#d$pct_LDS <- c(0.75, 4.53, 6.18, 1, 2.01, 2.82, 0.43, 0.55, 0.38,
-#0.75, 0.82, 5.18, 26.35, 0.44, 0.66, 0.87, 1.25, 0.77, 0.64, 0.81,
-#0.72, 0.39, 0.44, 0.58, 0.72, 1.14, 4.78, 1.29, 0.61, 0.37, 3.34,
-#0.41, 0.82, 1.48, 0.52, 1.2, 3.85, 0.4, 0.37, 0.83, 1.27, 0.75,
-#1.21, 67.97, 0.74, 1.13, 3.99, 0.92, 0.44, 11.5 ) # from wikipedia
 d$L <- standardize( d$LDS )
 d$A <- standardize( d$MedianAgeMarriage )
 d$M <- standardize( d$Marriage )
@@ -1262,4 +1257,6 @@ precis( m_5H4 )
 ```
 
 # Chapter 6
+
+
 
