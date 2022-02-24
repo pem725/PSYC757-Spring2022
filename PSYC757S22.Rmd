@@ -1,5 +1,6 @@
 ---
-title: "Patrick's Class Notes"
+title: "Patrick's PSYC 757 Class Notes"
+date: "`r paste('Last edits on:',date(), sep=' ')`"
 output: html_notebook
 ---
 
@@ -540,6 +541,8 @@ The second line.
 
 Three:  $\alpha$, $\beta$, and $\sigma$.
 
+### Medium Problems
+
 #### 4M1: For the model definition below, simulate observed y values from the prior (not the posterior).
 
 ```{r 4M1, echo=TRUE}
@@ -682,6 +685,7 @@ round(cov2cor(vcov(m4.3b)),2)
 
 As the number of knots increases, the spline will wiggle more but only up to a point.  The width of the prior weights constrains how much the spline can wiggle.  If you make the prior very wide, then the spline can wiggle a lot if it has enough knots.   The combination of number of knots and the width of the prior weights determines how tightly the spline can match the sample.  
 
+### Hard Problems
 
 #### 4H1: The weights listed below were recorded in the !Kung census, but heights were not recorded for these individuals. Provide predicted heights and 89% intervals for each of these individuals. That is, fill in the table below, using model-based predictions.
 
@@ -767,7 +771,7 @@ precis(m)
 
 (b)  Plot the raw data, with height on the vertical axis and weight on the horizontal axis. Superimpose the MAP regression line and 89% interval for the mean. Also superimpose the 89% interval for predicted heights.
 
-```{r}
+```{r 4H2b}
 post <- extract.samples(m)
 w.seq <- seq(1,45,length.out=50)
 mu <- sapply(w.seq, function(z) mean(post$a + post$b*(z-xbar)))
@@ -786,13 +790,11 @@ lines(w.seq, pred.ci[2,], lty=2)
 
 Weight and height are not linear.  Look carefully.  
 
-
-
 #### 4H3: Suppose a colleague of yours, who works on allometry, glances at the practice problems just above. Your colleague exclaims, “That’s silly. Everyone knows that it’s only the logarithm of body weight that scales with height!” Let’s take your colleague’s advice and see what happens.
 
 (a)  Model the relationship between height (cm) and the natural logarithm of weight (log-kg). Use the entire Howell1 data frame, all 544 rows, adults and non-adults. Can you interpret the resulting estimates?
 
-```{r}
+```{r 4H3a}
 library(rethinking)
 data("Howell1")
 d <- Howell1
@@ -814,7 +816,7 @@ precis(mlw)
 
 (b)  Begin with this plot: plot( height ~ weight , data=Howell1 ). Then use samples from the quadratic approximate posterior of the model in (a) to superimpose on the plot: (1) the predicted mean height as a function of weight, (2) the 97% interval for the mean, and (3) the 97% interval for predicted heights.
 
-```{r}
+```{r 4H3b}
 
 post <- extract.samples(mlw)
 w.seq <- seq(4,63, length.out=50)
@@ -835,7 +837,7 @@ lines(w.seq, pred.ci[2,], lty=2)
 
 #### 4H4: Plot the prior predictive distribution for the parabolic polynomial regression model in the chapter. You can modify the code that plots the linear regression prior predictive distribution. Can you modify the prior distributions of α, β1, and β2 so that the prior predictions stay within the biologically reasonable outcome space? That is to say: Do not try to fit the data by hand. But do try to keep the curves consistent with what you know about height and weight, before seeing these exact data.
 
-```{r}
+```{r 4H4}
 library(rethinking)
 data("Howell1")
 d <- Howell1
@@ -860,9 +862,120 @@ precis(prior)
 
 
 #### 4H5: Return to data(cherry_blossoms) and model the association between blossom date (doy) and March temperature (temp). Note that there are many missing values in both variables. You may consider a linear model, a polynomial, or a spline on temperature. How well does temperature trend predict the blossom trend?
+
+```{r 4H5}
+library(rethinking)
+data(cherry_blossoms)
+colSums( is.na(cherry_blossoms) )
+d <- cherry_blossoms
+d2 <- d[ complete.cases( d$doy , d$temp ) , c("doy","temp") ]
+
+num_knots <- 30
+knot_list <- quantile( d2$temp , probs=seq(0,1,length.out=num_knots) )
+library(splines)
+B <- bs(d2$temp,
+knots=knot_list[-c(1,num_knots)] ,
+degree=3 , intercept=TRUE )
+
+m4H5 <- quap(
+  alist(
+    D ~ dnorm( mu , sigma ) ,
+    mu <- a + B %*% w ,
+    a ~ dnorm(100,10),
+    w ~ dnorm(0,10),
+    sigma ~ dexp(1)
+    ), data=list( D=d2$doy , B=B ) ,
+  start=list( w=rep( 0 , ncol(B) ) ) )
+
+mu <- link( m4H5 )
+mu_mean <- apply( mu , 2 , mean )
+mu_PI <- apply( mu , 2 , PI, 0.97 )
+plot( d2$temp , d2$doy , col=col.alpha(rangi2,0.3) , pch=16 ,
+xlab="temp" , ylab="doy" )
+o <- order( d2$temp )
+lines( d2$temp[o] , mu_mean[o] , lwd=3 )
+shade( mu_PI[,o] , d2$temp[o] , col=grau(0.3) )
+```
+
+
 #### 4H6:  Simulate the prior predictive distribution for the cherry blossom spline in the chapter. Adjust the prior on the weights and observe what happens. What do you think the prior on the weights is doing?
+
+```{r 4H6}
+library(rethinking)
+data(cherry_blossoms)
+d <- cherry_blossoms
+d2 <- d[ complete.cases(d$doy) , ] # complete cases on doy
+num_knots <- 15
+knot_list <- quantile( d2$year , probs=seq(0,1,length.out=num_knots) )
+library(splines)
+B <- bs(d2$year,
+knots=knot_list[-c(1,num_knots)] ,
+degree=3 , intercept=TRUE )
+m4.7 <- quap(
+alist(
+D ~ dnorm( mu , sigma ) ,
+mu <- a + B %*% w ,
+a ~ dnorm(100,10),
+w ~ dnorm(0,10),
+sigma ~ dexp(1)
+), data=list( D=d2$doy , B=B ) ,
+start=list( w=rep( 0 , ncol(B) ) ) )
+
+p <- extract.prior( m4.7 )
+mu <- link( m4.7 , post=p )
+mu_mean <- apply( mu , 2 , mean )
+mu_PI <- apply( mu , 2 , PI, 0.97 )
+plot( d2$year , d2$doy , col=col.alpha(rangi2,0.3) , pch=16 ,
+xlab="year" , ylab="doy" , ylim=c(60,140) )
+lines( d2$year , mu_mean , lwd=3 )
+shade( mu_PI , d2$year , col=grau(0.3) )
+p <- extract.prior( m4.7 )
+mu <- link( m4.7 , post=p )
+plot( d2$year , d2$doy , col=col.alpha(rangi2,0.3) , pch=16 ,
+xlab="year" , ylab="day in year" , ylim=c(60,140) )
+for ( i in 1:20 ) lines( d2$year , mu[i,] , lwd=1 )
+m4.7b <- quap(
+alist(
+D ~ dnorm( mu , sigma ) ,
+mu <- a + B %*% w ,
+a ~ dnorm(100,10),
+w ~ dnorm(0,1),
+sigma ~ dexp(1)
+), data=list( D=d2$doy , B=B ) ,
+start=list( w=rep( 0 , ncol(B) ) ) )
+p <- extract.prior( m4.7b )
+mu <- link( m4.7b , post=p )
+plot( d2$year , d2$doy , col=col.alpha(rangi2,0.3) , pch=16 ,
+xlab="year" , ylab="day in year" , ylim=c(60,140) )
+for ( i in 1:20 ) lines( d2$year , mu[i,] , lwd=1 )
+```
+
+
 #### 4H7: TYPO - no 7th Hard problem
+
 #### 4H8: The cherry blossom spline in the chapter used an intercept α, but technically it doesn’t require one. The first basis functions could substitute for the intercept. Try refitting the cherry blossom spline without the intercept. What else about the model do you need to change to make this work?
+
+```{r 4H8}
+library(rethinking)
+data(cherry_blossoms)
+d <- cherry_blossoms
+d2 <- d[ complete.cases(d$doy) , ] # complete cases on doy
+num_knots <- 15
+knot_list <- quantile( d2$year , probs=seq(0,1,length.out=num_knots) )
+library(splines)
+B <- bs(d2$year,
+knots=knot_list[-c(1,num_knots)] ,
+degree=3 , intercept=TRUE )
+m4H7 <- quap(
+alist(
+D ~ dnorm( mu , sigma ) ,
+mu <- 0 + B %*% w ,
+w ~ dnorm(100,10),
+sigma ~ dexp(1)
+), data=list( D=d2$doy , B=B ) ,
+start=list( w=rep( 0 , ncol(B) ) ) )
+```
+
 
 # Chapter 5
 
@@ -871,6 +984,8 @@ Some key terms to consider:
 * spurious relationships
 * confounded relationships
 * multicollinearity
+
+Much of the chapter deals with testing models using a classical nested model comparison approach but applied to Bayesian models.  Be sure to get the gist of the chapter before trying to dig deep into the details or homework problems.  
 
 ## Useful functions to know in the rethinking package
 
@@ -881,4 +996,225 @@ HPDI()
 extract.prior()
 precis()
 
-Let's discuss them so you know what they do and why they might be useful even with STAN code and shiny-stan.
+## Useful packages that are either used in the chapter or that I mentioned in class
+
+[dagitty](https://cran.r-project.org/web/packages/dagitty/index.html)
+[Rgraphviz](https://www.bioconductor.org/packages/release/bioc/html/Rgraphviz.html)
+
+I prefer the latter but I am also more familiar with standard SEM notation than I am with the rather sparse DAG notation.
+
+Let's discuss these options further so you know what they do and why they might be useful even with STAN code and shiny-stan.
+
+## Assigned Problems
+
+### Easy Problems
+
+#### 5E1:  Which of the linear models below are multiple linear regressions?
+
+Models 2 and 4.  Should be pretty obvious now.
+
+#### 5E2:  Write down a multiple regression to evaluate the claim: Animal diversity is linearly related to latitude, but only after controlling for plant diversity. You just need to write down the model definition.
+
+$$D_i \sim Normal(\mu_i, \sigma) $$
+$$\mu_i = \alpha + \beta_L L_i + \beta_P P_i $$
+
+#### 5E3:  Write down a multiple regression to evaluate the claim: Neither amount of funding nor size of laboratory is by itself a good predictor of time to PhD degree; but together these variables are both positively associated with time to degree. Write down the model definition and indicate which side of zero each slope parameter should be on.
+
+$$P_i \sim Normal(\mu_i, \sigma)$$
+$$\mu_i = \alpha + \beta_F F_i + \beta_S S_i$$
+
+with both $\beta_F$ and $\beta_S$ zero.  Where the question can be a bit difficult is interpreting the independence of funding and size of lab are negligible but together they form a positive prediction.  If they are independent but together produce a strong predictive model then we can see both $\beta$'s being small but not necessarily significant while the total predictive validity of the model is sufficient to justify its use (i.e., small residuals with no outliers).  Even if they are independent, we could postulate an interaction (something we have yet to discuss in the class).  An interaction would indicate that neither alone are important but together they form a composite effect that reduces the residuals in our prediction model.  Think of this moderated effect as an alternative variable produced by multiplying the two predictors and, as such, requiring the specification of another $\beta_{FxS}$ that would account for the interaction.
+
+#### 5E4:  Suppose you have a single categorical predictor with 4 levels (unique values), labeled A, B, C and D. Let Ai be an indicator variable that is 1 where case i is in category A. Also suppose Bi, Ci, and Di for the other categories. Now which of the following linear models are inferentially equivalent ways to include the categorical variable in a regression? Models are inferentially equivalent when it’s possible to compute one posterior distribution from the posterior distribution of another model.
+
+Richard says that models 1, 3, 4, and 5 are inferentially equivalent with weak priors.  I'm not sure I agree on that point but we do agree that model 2 has a redundant parameter ($\alpha$ and $\beta_A$)  Here is my thinking on the other four.  Model 1 omits that C influence and, as such, has the C contribution in the intercept.  Model 3 omits A and, as such, has the A contribution in the intercept.  Similarly, model 5 just makes explicit model 3 so I have no problem with that one.  Where I do have a problem is in the explicit notation for model 4.  That model either has an explicitly stated intercept for A and, as such, is the same model as model 3 OR it is a typo.  I'll ask Richard directly and get back to you.
+
+### Medium Problems
+
+#### 5M1: Invent your own example of a spurious correlation. An outcome variable should be correlated with both predictor variables. But when both predictors are entered in the same model, the correlation between the outcome and one of the predictors should mostly vanish (or at least be greatly reduced).
+
+[Read This Article For A Great Example](https://fivethirtyeight.com/features/science-isnt-broken/#part1)
+
+
+#### 5M2: Invent your own example of a masked relationship. An outcome variable should be correlated with both predictor variables, but in opposite directions. And the two predictor variables should be correlated with one another.
+
+Consider divorce differentially affecting males compared to females.  Why?  I don't need to invent anything here.  Also, if you have not heard of the purported effect, the [Dunning-Kruger effect](https://github.com/pem725/Dunning-Kruger.git) is one that masks a relationship - the true relationship.  I have more.  Let's discuss others.
+
+#### 5M3: It is sometimes observed that the best predictor of fire risk is the presence of firefighters—States and localities with many firefighters also have more fires. Presumably firefighters do not cause fires. Nevertheless, this is not a spurious correlation. Instead fires cause firefighters. Consider the same reversal of causal inference in the context of the divorce and marriage data. How might a high divorce rate cause a higher marriage rate? Can you think of a way to evaluate this relationship, using multiple regression?
+
+Yes.  Time.  Everyone omits time in social science.  If you modeled the relationship including time, you could see that firefighters come after fires.  The omission of a relevant variable (here, time) is deadly in science and scientific inference.
+
+#### 5M4:  In the divorce data, States with high numbers of members of the Church of Jesus Christ of Latter-day Saints (LDS) have much lower divorce rates than the regression models expected. Find a list of LDS population by State and use those numbers as a predictor variable, predicting divorce rate using marriage rate, median age at marriage, and percent LDS population (possibly standardized). You may want to consider transformations of the raw percent LDS variable.
+
+```{r 5M4}
+library(rethinking)
+library(rvest)
+library(tidyverse)
+
+data(WaffleDivorce)
+d <- WaffleDivorce
+
+## scrape from wikipedia
+LDSpage <- read_html("https://en.wikipedia.org/wiki/The_Church_of_Jesus_Christ_of_Latter-day_Saints_membership_statistics_(United_States)")
+
+LDStab <- LDSpage %>% 
+  html_nodes(css = "table") %>%
+  nth(4) %>%
+  html_table(fill=TRUE)
+
+LDStab <- LDStab[,c(1,4)]
+LDStab$LDS <- as.numeric(gsub("[\\%,]", "",LDStab$LDS))
+d <- merge(d,LDStab,by.x="Location",by.y="State",all.x=T)
+
+#d$pct_LDS <- c(0.75, 4.53, 6.18, 1, 2.01, 2.82, 0.43, 0.55, 0.38,
+#0.75, 0.82, 5.18, 26.35, 0.44, 0.66, 0.87, 1.25, 0.77, 0.64, 0.81,
+#0.72, 0.39, 0.44, 0.58, 0.72, 1.14, 4.78, 1.29, 0.61, 0.37, 3.34,
+#0.41, 0.82, 1.48, 0.52, 1.2, 3.85, 0.4, 0.37, 0.83, 1.27, 0.75,
+#1.21, 67.97, 0.74, 1.13, 3.99, 0.92, 0.44, 11.5 ) # from wikipedia
+d$L <- standardize( d$LDS )
+d$A <- standardize( d$MedianAgeMarriage )
+d$M <- standardize( d$Marriage )
+d$D <- standardize( d$Divorce )
+
+m_5M4 <- quap(
+alist(
+D ~ dnorm(mu,sigma),
+mu <- a + bM*M + bA*A + bL*L,
+a ~ dnorm(0,0.2),
+c(bA,bM,bL) ~ dnorm(0,0.5),
+sigma ~ dexp(1)
+), data=d )
+precis( m_5M4 )
+
+```
+
+
+#### 5M5: One way to reason through multiple causation hypotheses is to imagine detailed mechanisms through which predictor variables may influence outcomes. For example, it is sometimes argued that the price of gasoline (predictor variable) is positively associated with lower obesity rates (outcome variable). However, there are at least two important mechanisms by which the price of gas could reduce obesity. First, it could lead to less driving and therefore more exercise. Second, it could lead to less driving, which leads to less eating out, which leads to less consumption of huge restaurant meals. Can you outline one or more multiple regressions that address these two mechanisms? Assume you can have any predictor data you need.
+
+This question is an exercise in your knowledge and creativity.  While I think it is always a good idea to get students to think about these topics, most lack the broad knowledge to capture what Richard is asking here.  You need to think about alternative causal models where the DAG is almost certainly wrong.  These may be in short supply for most of you so I will provide a few suggestions on Thursday when we meet again.
+
+
+### Hard Problems
+
+#### 5H1: In the divorce example, suppose the DAG is: M → A → D. What are the implied conditional independencies of the graph? Are the data consistent with it?
+
+```{r 5H1}
+library(dagitty)
+dag_5H1 <- dagitty("dag{M->A->D}")
+impliedConditionalIndependencies(dag_5H1)
+```
+
+
+#### 5H2: Assuming that the DAG for the divorce example is indeed M → A → D, fit a new model and use it to estimate the counterfactual effect of halving a State’s marriage rate M. Use the counterfactual example from the chapter (starting on page 140) as a template.
+
+```{r 5H2}
+library(rethinking)
+data(WaffleDivorce)
+d <- WaffleDivorce
+d$D <- standardize( d$Divorce )
+d$M <- standardize( d$Marriage )
+d$A <- standardize( d$MedianAgeMarriage )
+
+m5H2 <- quap(
+alist(
+# A -> D
+D ~ dnorm( muD , sigmaD ),
+muD <- aD + bAD*A,
+# M -> A
+A ~ dnorm( muA , sigmaA ),
+muA <- aA + bMA*M,
+# priors
+c(aD,aA) ~ dnorm(0,0.2),
+c(bAD,bMA) ~ dnorm(0,0.5),
+c(sigmaD,sigmaA) ~ dexp(1)
+) , data=d )
+precis(m5H2)
+M_seq <- seq( from=-3 , to=3 , length.out=30 )
+sim_dat <- data.frame( M=M_seq )
+s <- sim( m5H2 , data=sim_dat , vars=c("A","D") )
+plot( sim_dat$M , colMeans(s$A) , ylim=c(-2,2) , type="l" ,xlab="manipulated M" , ylab="counterfactual A" )
+shade( apply(s$A,2,PI) , sim_dat$M )
+mtext( "Counterfactual M -> A" )
+plot( sim_dat$M , colMeans(s$D) , ylim=c(-2,2) , type="l" ,
+xlab="manipulated M" , ylab="counterfactual D" )
+shade( apply(s$D,2,PI) , sim_dat$M )
+mtext( "Counterfactual M -> A -> D" )
+(10 - mean(d$Marriage))/sd(d$Marriage)
+M_seq <- c( 0 , -2.67 )
+sim_dat <- data.frame( M=M_seq )
+s <- sim( m5H2 , data=sim_dat , vars=c("A","D") )
+diff <- s$D[,2] - s$D[,1]
+mean( diff )
+
+```
+
+
+#### 5H3: Return to the milk energy model, m5.7. Suppose that the true causal relationship among the variables is: (see diagram in book).  Now compute the counterfactual effect on K of doubling M. You will need to account for both the direct and indirect paths of causation. Use the counterfactual example from the chapter (starting on page 140) as a template.
+
+```{r 5H3}
+library(rethinking)
+data(milk)
+d <- milk
+d$K <- standardize( d$kcal.per.g )
+d$N <- standardize( d$neocortex.perc )
+d$M <- standardize( log(d$mass) )
+d2 <- d[ complete.cases( d$K , d$N , d$M ) , ]
+m5H3 <- quap(
+alist(
+# M -> K <- N
+K ~ dnorm( muK , sigmaK ),
+muK <- aK + bMK*M + bNK*N,
+# M -> N
+N ~ dnorm( muN , sigmaN ),
+muN <- aN + bMN*M,
+# priors
+c(aK,aN) ~ dnorm( 0 , 0.2 ),
+c(bMK,bNK,bMN) ~ dnorm( 0 , 0.5 ),
+c(sigmaK,sigmaN) ~ dexp( 1 )
+) , data=d2 )
+precis( m5H3 )
+(log(c(15,30)) - mean(log(d$mass)))/sd(log(d$mass))
+M_seq <- c( 0.75 , 1.15 )
+sim_dat <- data.frame( M=M_seq )
+s <- sim( m5H3 , data=sim_dat , vars=c("N","K") )
+diff <- s$K[,2] - s$K[,1]
+quantile( diff , probs=c( 0.05 , 0.5 , 0.94 ) )
+M_seq <- seq( from=-3 , to=3 , length.out=30 )
+sim_dat <- data.frame( M=M_seq )
+s <- sim( m5H3 , data=sim_dat , vars=c("N","K") )
+0.61*0.68 - 0.7
+( 0.61*0.68 - 0.7 )*0.4
+
+
+```
+
+
+#### 5H4: Here is an open practice problem to engage your imagination. In the divorce date, States in the southern United States have many of the highest divorce rates. Add the South indicator variable to the analysis. First, draw one or more DAGs that represent your ideas for how Southern American culture might influence any of the other three variables (D, M or A). Then list the testable implications of your DAGs, if there are any, and fit one or more models to evaluate the implications. What do you think the influence of “Southerness” is?
+
+```{r 5H4}
+library(dagitty)
+dag_5H4 <- dagitty("dag{ M <- A -> D; A <- S -> D; M -> D }")
+coordinates(dag_5H4) <- list(
+x=c(A=0,M=1,D=2,S=1),
+y=c(A=1,M=0,D=1,S=2) )
+drawdag( dag_5H4 )
+impliedConditionalIndependencies( dag_5H4 )
+library(rethinking)
+data(WaffleDivorce)
+d <- WaffleDivorce
+d$D <- standardize( d$Divorce )
+d$M <- standardize( d$Marriage )
+d$A <- standardize( d$MedianAgeMarriage )
+d$S <- d$South
+m_5H4 <- quap(
+alist(
+M ~ dnorm( mu , sigma ),
+mu <- a + bS*S + bA*A,
+a ~ dnorm( 0 , 0.2 ),
+c(bS,bA) ~ dnorm( 0 , 0.5 ),
+sigma ~ dexp( 1 )
+) , data=d )
+precis( m_5H4 )
+
+```
+
