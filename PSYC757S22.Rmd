@@ -1,13 +1,54 @@
 ---
 title: "Patrick's PSYC 757 Class Notes"
 date: "`r paste('Last edits on:',date(), sep=' ')`"
-output: html_notebook
+output: 
+  html_document:
+    toc: true
+    number_sections: false
+    toc_float: true
+    df_print: paged
+    code_folding: show
+  pdf_document: default
+  html_notebook: default
 ---
 
-```{r preamble, message=FALSE, warning=FALSE}
-library(rethinking)
+```{r preamble, message=FALSE, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	background = "#ADD8E6",
+	cache = TRUE,
+	tidy = 'styler',
+	class.source = "bg-warning",
+	class.output = "bg-success",
+	fig_caption = TRUE,
+	digits = 3
+)
+
+
 ```
 
+```{r libraries, include=FALSE}
+using<-function(...) {
+    libs<-unlist(list(...))
+    req<-unlist(lapply(libs,require,character.only=TRUE))
+    need<-libs[req==FALSE]
+    if(length(need)>0){ 
+        install.packages(need)
+        lapply(need,require,character.only=TRUE)
+    }
+}
+using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","rvest","dagitty")
+
+round_df <- function(df, digits) {
+  nums <- vapply(df, is.numeric, FUN.VALUE = logical(1))
+
+  df[,nums] <- round(df[,nums], digits = digits)
+
+  (df)
+}
+
+```
 
 # Chapter 1
 
@@ -989,17 +1030,17 @@ Much of the chapter deals with testing models using a classical nested model com
 
 ## Useful functions to know in the rethinking package
 
-link()
-sim()
-PI()
-HPDI()
-extract.prior()
-precis()
+* link()
+* sim()
+* PI()
+* HPDI()
+* extract.prior()
+* precis()
 
 ## Useful packages that are either used in the chapter or that I mentioned in class
 
-[dagitty](https://cran.r-project.org/web/packages/dagitty/index.html)
-[Rgraphviz](https://www.bioconductor.org/packages/release/bioc/html/Rgraphviz.html)
+* [dagitty](https://cran.r-project.org/web/packages/dagitty/index.html)
+* [Rgraphviz](https://www.bioconductor.org/packages/release/bioc/html/Rgraphviz.html)
 
 I prefer the latter but I am also more familiar with standard SEM notation than I am with the rather sparse DAG notation.
 
@@ -1077,13 +1118,13 @@ d$M <- standardize( d$Marriage )
 d$D <- standardize( d$Divorce )
 
 m_5M4 <- quap(
-alist(
-D ~ dnorm(mu,sigma),
-mu <- a + bM*M + bA*A + bL*L,
-a ~ dnorm(0,0.2),
-c(bA,bM,bL) ~ dnorm(0,0.5),
-sigma ~ dexp(1)
-), data=d )
+  alist(
+    D ~ dnorm(mu,sigma),
+    mu <- a + bM*M + bA*A + bL*L,
+    a ~ dnorm(0,0.2),
+    c(bA,bM,bL) ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
 precis( m_5M4 )
 
 ```
@@ -1116,27 +1157,30 @@ d$M <- standardize( d$Marriage )
 d$A <- standardize( d$MedianAgeMarriage )
 
 m5H2 <- quap(
-alist(
-# A -> D
-D ~ dnorm( muD , sigmaD ),
-muD <- aD + bAD*A,
-# M -> A
-A ~ dnorm( muA , sigmaA ),
-muA <- aA + bMA*M,
-# priors
-c(aD,aA) ~ dnorm(0,0.2),
-c(bAD,bMA) ~ dnorm(0,0.5),
-c(sigmaD,sigmaA) ~ dexp(1)
-) , data=d )
+  alist(
+    # A -> D
+    D ~ dnorm( muD , sigmaD ),
+    muD <- aD + bAD*A,
+    # M -> A
+    A ~ dnorm( muA , sigmaA ),
+    muA <- aA + bMA*M,
+    # priors
+    c(aD,aA) ~ dnorm(0,0.2),
+    c(bAD,bMA) ~ dnorm(0,0.5),
+    c(sigmaD,sigmaA) ~ dexp(1)
+    ) , data=d )
 precis(m5H2)
 M_seq <- seq( from=-3 , to=3 , length.out=30 )
 sim_dat <- data.frame( M=M_seq )
 s <- sim( m5H2 , data=sim_dat , vars=c("A","D") )
-plot( sim_dat$M , colMeans(s$A) , ylim=c(-2,2) , type="l" ,xlab="manipulated M" , ylab="counterfactual A" )
+
+plot( sim_dat$M , colMeans(s$A) , ylim=c(-2,2) , type="l" ,xlab="manipulated M" ,
+      ylab="counterfactual A" )
 shade( apply(s$A,2,PI) , sim_dat$M )
 mtext( "Counterfactual M -> A" )
+
 plot( sim_dat$M , colMeans(s$D) , ylim=c(-2,2) , type="l" ,
-xlab="manipulated M" , ylab="counterfactual D" )
+      xlab="manipulated M" , ylab="counterfactual D" )
 shade( apply(s$D,2,PI) , sim_dat$M )
 mtext( "Counterfactual M -> A -> D" )
 (10 - mean(d$Marriage))/sd(d$Marriage)
@@ -1145,7 +1189,6 @@ sim_dat <- data.frame( M=M_seq )
 s <- sim( m5H2 , data=sim_dat , vars=c("A","D") )
 diff <- s$D[,2] - s$D[,1]
 mean( diff )
-
 ```
 
 
@@ -1160,18 +1203,18 @@ d$N <- standardize( d$neocortex.perc )
 d$M <- standardize( log(d$mass) )
 d2 <- d[ complete.cases( d$K , d$N , d$M ) , ]
 m5H3 <- quap(
-alist(
-# M -> K <- N
-K ~ dnorm( muK , sigmaK ),
-muK <- aK + bMK*M + bNK*N,
-# M -> N
-N ~ dnorm( muN , sigmaN ),
-muN <- aN + bMN*M,
-# priors
-c(aK,aN) ~ dnorm( 0 , 0.2 ),
-c(bMK,bNK,bMN) ~ dnorm( 0 , 0.5 ),
-c(sigmaK,sigmaN) ~ dexp( 1 )
-) , data=d2 )
+  alist(
+    # M -> K <- N
+    K ~ dnorm( muK , sigmaK ),
+    muK <- aK + bMK*M + bNK*N,
+    # M -> N
+    N ~ dnorm( muN , sigmaN ),
+    muN <- aN + bMN*M,
+    # priors
+    c(aK,aN) ~ dnorm( 0 , 0.2 ),
+    c(bMK,bNK,bMN) ~ dnorm( 0 , 0.5 ),
+    c(sigmaK,sigmaN) ~ dexp( 1 )
+    ) , data=d2 )
 precis( m5H3 )
 (log(c(15,30)) - mean(log(d$mass)))/sd(log(d$mass))
 M_seq <- c( 0.75 , 1.15 )
@@ -1185,7 +1228,6 @@ s <- sim( m5H3 , data=sim_dat , vars=c("N","K") )
 0.61*0.68 - 0.7
 ( 0.61*0.68 - 0.7 )*0.4
 
-
 ```
 
 
@@ -1195,10 +1237,11 @@ s <- sim( m5H3 , data=sim_dat , vars=c("N","K") )
 library(dagitty)
 dag_5H4 <- dagitty("dag{ M <- A -> D; A <- S -> D; M -> D }")
 coordinates(dag_5H4) <- list(
-x=c(A=0,M=1,D=2,S=1),
-y=c(A=1,M=0,D=1,S=2) )
+  x=c(A=0,M=1,D=2,S=1),
+  y=c(A=1,M=0,D=1,S=2) )
 drawdag( dag_5H4 )
 impliedConditionalIndependencies( dag_5H4 )
+
 library(rethinking)
 data(WaffleDivorce)
 d <- WaffleDivorce
@@ -1207,13 +1250,13 @@ d$M <- standardize( d$Marriage )
 d$A <- standardize( d$MedianAgeMarriage )
 d$S <- d$South
 m_5H4 <- quap(
-alist(
-M ~ dnorm( mu , sigma ),
-mu <- a + bS*S + bA*A,
-a ~ dnorm( 0 , 0.2 ),
-c(bS,bA) ~ dnorm( 0 , 0.5 ),
-sigma ~ dexp( 1 )
-) , data=d )
+  alist(
+    M ~ dnorm( mu , sigma ),
+    mu <- a + bS*S + bA*A,
+    a ~ dnorm( 0 , 0.2 ),
+    c(bS,bA) ~ dnorm( 0 , 0.5 ),
+    sigma ~ dexp( 1 )
+    ) , data=d )
 precis( m_5H4 )
 
 ```
