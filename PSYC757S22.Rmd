@@ -1258,5 +1258,324 @@ precis( m_5H4 )
 
 # Chapter 6
 
+The chapter focuses on what happens when causal relationships are ignored (or not tested) but inferred from regression models.  Richard cites several biases or paradoxes that we may fall prey to without a suitable understanding of causality.
+
+* [Berkson's Paradox:](https://en.wikipedia.org/wiki/Berkson%27s_paradox) A selection bias problem that seems to have caught Richard's eye.  The paradox has some relevance to social science but not much.  
+* Collider Bias: see above
+* Multicollinearity (see above), non-identifiability, and included variable bias
+* [Simpson's paradox:](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
+* Conditioning on the consequence rather than the antecedent (another Collider bias)
+
+DAGs may be helpful in getting us to root out confounds.  Richard provides four elemental ones - the Fork, Pipe, Collider, and Descendent.
+
+## The Fork
 
 
+
+```{r ForkDAG, fig.cap="Fork DAG"}
+library(dagitty)
+fork_dag <- dagitty('dag {
+  Z [pos="0,0"]
+  X [pos="-1,-1"]
+  Y [pos="1,-1"]
+  
+  Z -> {X Y}
+}')
+plot(fork_dag)
+
+```
+
+The *FORK* is the classic confounder where a variable Z is a common cause of X and Y and, as such, generates a correlation between them. Conditioning our effects on Z, then X tells us nothing about Y. X and Y are independent, conditional on Z.
+
+```{r}
+impliedConditionalIndependencies(fork_dag)
+```
+
+## The Pipe
+
+```{r PipeDAG, fig.cap="Pipe DAG"}
+pipe_dag <- dagitty('dag {
+  X [pos="-1,-1"]
+  Z [pos="0,0"]
+  Y [pos="1,1"]
+  
+  X -> Z
+  Z -> Y
+}')
+plot(pipe_dag)
+
+```
+
+The treatment X influences Z which influences Y - a pure mediation effect. If we condition on Z, we block the path from X to Y. Conditioning on the middle variable in both the **FORK** and the **PIPE** blocks the path between X and Y.
+
+```{r}
+impliedConditionalIndependencies(pipe_dag)
+```
+## The Collider
+
+```{r ColliderDAG, fig.cap="Collider DAG"}
+collider_dag <- dagitty('dag {
+  X [pos="-1,1"]
+  Z [pos="0,0"]
+  Y [pos="1,1"]
+  
+  X -> Z
+  Y -> Z
+}')
+plot(collider_dag)
+
+```
+
+There is no association between X and Y in a **COLLIDER** unless you condition on Z. Conditioning on Z (aka, the collider variable), opens the path between X and Y.  Simply put, once the path is open, information flows between X and Y, however, neither X nor Y has any causal influence on the other.
+
+```{r}
+impliedConditionalIndependencies(collider_dag)
+```
+
+
+## The Descendent
+
+```{r DescendentDAG, fig.cap="Descendent DAG"}
+descendent_dag <- dagitty('dag {
+  X [pos="-1,1"]
+  Z [pos="0,0"]
+  Y [pos="1,1"]
+  D [pos="0,.7"]
+  
+  X -> Z
+  Y -> Z
+  Z -> D
+}')
+plot(descendent_dag)
+
+```
+
+A descendent (D) is a variable influenced by another variable (Z). Conditioning on a descendent partly conditions on its parent because D has *some* information about Z but the information is incomplete (often in the form of a proxy for Z). Further, conditioning on D partially opens the path from X to Y, because Z is a collider. Note that the effects of conditioning may change depending upon the nature of its parents with respect to X and Y.  
+
+```{r}
+impliedConditionalIndependencies(descendent_dag)
+```
+Be sure to run the code that Richard provided in the chapter and make sure you can reproduce the effects.
+
+## Assigned Problems
+
+### Easy Problems
+
+#### 6E1.  List three mechanisms by which multiple regression can produce false inferences about causal effects.
+
+1. Confounding
+2. Multicollineary
+3. Conditioning on Post-Tx variable
+4. Collider bias
+
+#### 6E2.  For one of the mechanisms in the previous problem, provide an example of your choice, perhaps from your own research.
+
+Math ability and shoe size
+
+```{r 6E2}
+library(dagitty)
+ans6E2 <- dagitty('dag {
+  Age -> Education
+  Age -> ShoeSize
+  Education -> MathAbility
+}')
+plot(ans6E2)
+impliedConditionalIndependencies(ans6E2)
+```
+
+
+
+#### 6E3.  List the four elemental confounds. Can you explain the conditional dependencies of each?
+
+1. Fork (see above for all)
+2. Pipe
+3. Collider
+4. Descendent
+
+
+#### 6E4.  How is a biased sample like conditioning on a collider? Think of the example at the open of the chapter.
+
+A biased sample means that there is necessarily a restriction of range between X and Y.  That restriction can come in the form of many effects but a collider is one of the many.  The bias may result in an unfortunate conditioning that is like a collider but it may come in the form of the other confounds (fork, pipe, or descendent).
+
+### Medium Problems
+
+#### 6M1.  Modify the DAG on page 186 to include the variable V, an unobserved cause of C and Y: C ← V → Y. Reanalyze the DAG. How many paths connect X to Y? Which must be closed? Which variables should you condition on now?
+
+```{r 6M1} 
+library(dagitty)
+dag_6M1 <- dagitty("dag{
+  U [unobserved]
+  V [unobserved]
+  X -> Y
+  X <- U -> B <- C -> Y
+  U <- A -> C
+  C <- V -> Y }")
+
+coordinates(dag_6M1) <- list(
+  x=c(X=0,Y=2,U=0,A=1,B=1,C=2,V=2.5),
+  y=c(X=2,Y=2,U=1,A=0.5,B=1.5,C=1,V=1.5) )
+plot(dag_6M1)
+```
+
+Given the 5 paths connecting X and Y:
+1. X -> Y (the direct causal path)
+2. X <- U -> B <- C -> Y
+3. X <- U -> B <- C <- V -> Y
+4. X <- U <- A -> C -> Y
+5. X <- U <- A -> C <- V -> Y
+
+Path 1 should remain open and close the others because they are non-causal (i.e., confounds).  The B paths are closed since B is a collider so we don't condition on B.  Paths through A vna V are also closed because C is a collider on them.  We can condition on A to close all the non-causal paths and demonstrate this by the following code:
+
+```{r 6M1cont1}
+adjustmentSets(dag_6M1, exposure = "X", outcome="Y")
+
+```
+The chapter showed that we could also condition on C when V was not included but with V, we cannot condition on C.
+
+```{r 6M1cont2} 
+library(dagitty)
+dag186 <- dagitty("dag{
+  U [unobserved]
+  X -> Y
+  X <- U -> B <- C -> Y
+  U <- A -> C}")
+
+coordinates(dag186) <- list(
+  x=c(X=0,Y=2,U=0,A=1,B=1,C=2),
+  y=c(X=2,Y=2,U=1,A=0.5,B=1.5,C=1) )
+plot(dag186)
+```
+
+```{r dag186}
+adjustmentSets(dag186, exposure = "X", outcome="Y")
+```
+See?
+
+#### 6M2.  Sometimes, in order to avoid multicollinearity, people inspect pairwise correlations among predictors before including them in a model. This is a bad procedure, because what matters is the conditional association, not the association before the variables are included in the model. To highlight this, consider the DAG X → Z → Y. Simulate data from this DAG so that the correlation between X and Z is very large. Then include both in a model prediction Y. Do you observe any multicollinearity? Why or why not? What is different from the legs example in the chapter?
+
+```{r 6M2.1}
+N <- 1000
+X <- rnorm(N)
+Z <- rnorm(N,X,0.1)
+Y <- rnorm(N,Z)
+cor(X,Z)
+```
+
+```{r 6M2.2}
+m_6M2 <- quap(
+  alist(
+    Y ~ dnorm( mu , sigma ),
+    mu <- a + bX*X + bZ*Z,
+    c(a,bX,bZ) ~ dnorm(0,1),
+    sigma ~ dexp(1)
+    ) , data=list(X=X,Y=Y,Z=Z) )
+precis( m_6M2 )
+
+```
+
+Conditioning on a post-treatment variable because it eliminates X since Z mediates the entire effect between X and Y.  
+
+
+#### 6M3.  Learning to analyze DAGs requires practice. For each of the four DAGs below, state which variables, if any, you must adjust for (condition on) to estimate the total causal influence of X on Y.
+
+In each case, the procedure is the same: List all paths between X and Y and figure out which non-causal paths are open and which variables you can use to close them. We’ll consider each in turn.
+
+Top left. There are three paths between X and Y: (1) X → Y, (2) X ← Z → Y, (3) X ← Z ← A → Y. Both (2) and (3) are open, non-causal paths. Conditioning on Z is sufficient to close both.
+
+Top right. Again three paths: (1) X → Y, (2) X → Z → Y, (3) X → Z ← A → Y. Paths (1) and (2) are both causal. We want both open. Path (3) is non-causal, but it is also closed already because Z is a collider on that path.
+
+Bottom left. Paths: (1) X → Y, (2) X → Z ← Y, (3) X ← A → Z ← Y. Only path (1) is causal. The other paths are both closed, because both contain a collider at Z. Conditioning on Z would be a disaster.
+
+Bottom right. Paths: (1) X → Y, (2) X → Z → Y, (3) X ← A → Z → Y. Paths (1) and (2) are causal. Path (3) is an open backdoor path. To close it, we must condition on A or Z, but if condition on Z, that would close a causal path.
+
+### Hard Problems
+
+#### 6H1.  Use the Waffle House data, data(WaffleDivorce), to find the total causal influence of number of Waffle Houses on divorce rate. Justify your model or models with a causal graph.
+
+```{r 6H1}
+library(dagitty)
+dag_6H1 <- dagitty("dag{A -> D; A -> M -> D; A <- S -> D; S -> W -> D}")
+coordinates(dag_6H1) <- list(
+  x=c(A=0,M=1,D=2,S=1,W=2),
+  y=c(A=0.75,M=0.5,D=1,S=0,W=0) )
+plot(dag_6H1)
+```
+
+```{r 6H1cont}
+adjustmentSets(dag_6H1, exposure = "A", outcome="D")
+```
+
+#### 6H2.  Build a series of models to test the implied conditional independencies of the causal graph you used in the previous problem. If any of the tests fail, how do you think the graph needs to be amended? Does the graph need more or fewer arrows? Feel free to nominate variables that aren’t in the data.
+
+```{r 6H2}
+impliedConditionalIndependencies( dag_6H1 )
+```
+
+All three problems below are based on the same data. The data in data(foxes) are 116 foxes from 30 different urban groups in England. These foxes are like street gangs. Group size varies from 2 to 8 individuals. Each group maintains its own urban territory. Some territories are larger than others. The area variable encodes this information. Some territories also have more avgfood than others. We want to model the weight of each fox. For the problems below, assume the following DAG:
+
+#### 6H3.  Use a model to infer the total causal influence of area on weight. Would increasing the area available to each fox make it heavier (healthier)? You might want to standardize the variables. Regardless, use prior predictive simulation to show that your model’s prior predictions stay within the possible outcome range.
+
+```{r 6H3}
+library(rethinking)
+data(foxes)
+d <- foxes
+d$W <- standardize(d$weight)
+d$A <- standardize(d$area)
+m1 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bA*A,
+    a ~ dnorm(0,0.2),
+    bA ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+precis(m1)
+```
+
+Territory size seems to have no total causal influence on weight, at least not in this sample.
+
+#### 6H4.  Now infer the causal impact of adding food to a territory. Would this make foxes heavier? Which covariates do you need to adjust for to estimate the total causal influence of food?
+
+To infer the causal influence of avgfood on weight, we need to close any back-door paths. There are no back-door paths in the DAG. So again, just use a model with a single predictor. If you include groupsize, to block the indirect path, then you won’t get the total causal influence of food. You’ll just get the direct influence. But I asked for the effect of adding food, and that would mean through all forward paths.
+
+```{r 6H4}
+d$F <- standardize(d$avgfood)
+m2 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bF*F,
+    a ~ dnorm(0,0.2),
+    bF ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+precis(m2)
+```
+
+Again nothing. Adding food does not change weight. This shouldn’t surprise you, if the DAG is correct, because area is upstream of avgfood.
+
+#### 6H5.  Now infer the causal impact of group size. Which covariates do you need to adjust for? Looking at the posterior distribution of the resulting model, what do you think explains these data? That is, can you explain the estimates for all three problems? How do they go together?
+
+The variable groupsize does have a back-door path, passing through avgfood. So to infer the causal influence of groupsize, we need to close that path. This implies a model with both groupsize and avgfood as predictors.
+
+```{r 6H5}
+d$G <- standardize(d$groupsize)
+m3 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bF*F + bG*G,
+    a ~ dnorm(0,0.2),
+    c(bF,bG) ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+precis(m3)
+```
+
+It looks like group size is negatively associated with weight, controlling for food. Similarly, food is positively associated with weight, controlling for group size. So the causal influence of group size is to reduce weight—less food for each fox. And the direct causal influence of food is positive, of course. But the total causal influence of food is still nothing, since it causes larger groups. This is a masking effect, like in the milk energy example. But the causal explanation here is that more foxes move into a territory until the food available to each is no better than the food in a neighboring territory. Every territory ends up equally good/bad on average. This is known in behavioral ecology as an ideal free distribution. 
+
+#### 6H6.  Consider your own research question. Draw a DAG to represent it. What are the testable implications of your DAG? Are there any variables you could condition on to close all backdoor paths? Are there unobserved variables that you have omitted? Would a reasonable colleague imagine additional threats to causal inference that you have ignored?
+
+Good exercise for each of you.  Show me what you got.
+
+#### 6H7.  For the DAG you made in the previous problem, can you write a data generating simulation for it? Can you design one or more statistical models to produce causal estimates? If so, try to calculate interesting counterfactuals. If not, use the simulation to estimate the size of the bias you might expect. Under what conditions would you, for example, infer the opposite of a true causal effect?
+
+Use the tools I showed you from the above.  Now is a good time to try these tools out in a real applied problem that you find interesting/engaging.
