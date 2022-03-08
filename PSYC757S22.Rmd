@@ -1579,3 +1579,473 @@ Good exercise for each of you.  Show me what you got.
 #### 6H7.  For the DAG you made in the previous problem, can you write a data generating simulation for it? Can you design one or more statistical models to produce causal estimates? If so, try to calculate interesting counterfactuals. If not, use the simulation to estimate the size of the bias you might expect. Under what conditions would you, for example, infer the opposite of a true causal effect?
 
 Use the tools I showed you from the above.  Now is a good time to try these tools out in a real applied problem that you find interesting/engaging.
+
+
+# Chapter 7
+
+## Points to remember:
+
+* Two incorrect models may produce similar results
+* Parsimony - fewer assumptions and fewer parameters - leads the way!
+* Beware of the overfit and underfit models - both mislead
+* Two approaches to defend against these models
+  - Use a **regularizing prior**
+  - Use a scoring device like an **information criterion** or **cross-validation**
+* A word of caution - information criteria are tough to understand but easy to implement
+* NOTE:  Confounded models *may* outperform correct causal models
+* Please read and re-read the Rethinking: OLS and Bayesian anti-essentialism.  You will learn about the ties between frequentists and subjectivists at a deeper level.
+* **OVERFITTING:**  As the number of parameters increases, we learn less and less about the data.  Richard refers to this as **data compression** but it is actually a form of data reduction (cf EFA, CFA, PCA).  A model completely expressing the observed data is referred to as the MDL or Mimimum Description Length.  Avoid this outcome!  Too many parameters means you trust your data more than the model leading to poor predictive validity in the future.
+* **UNDERFITTING:** Too few parameters means you trust the model more than your data.  Beware of the restricted model where you may be inclined to let parsimony reign over the kingdom of scientific prediction.
+* Accuracy of model predictions:
+  - Cost-benefit. Assign weights to decisions and compute costs and benefits accordingly.
+  - Accuracy in context.  Compute scoring rules on accuracy such as the *Log Scoring Rule*.
+* Calibration does not equate to accuracy.  NOTE:  The D-K effect is one that clearly shows this problem in detail.
+
+## Data are NOT information
+
+A classical problem that people often make is that data is information; it is not.  Data are information *only* when the data lead to a decrease in uncertainty.  I want you all to embrace this clear definition because, by doing so, you will be a more effective data analyst.  Further, information and the pursuit of reducing uncertainty is the fundamental aspect of Bayesian data analysis.  
+
+## Uncertainty Desiderata
+
+1. Continuous as opposed to discrete
+2. Directly proportional to the number of possible events
+3. Additive (i.e., conjoint additivity conditions must be met)
+
+## Information
+
+$$H(p) = -E \; log(p_i) = - \sum_{i=1}^{n} p_i log(p_i) $$
+
+**Entropy** $H(p)$ is *"the uncertainty contained in a probability distribution is the average log-probability of an event."*
+
+Be sure you understand this concept because entropy is the key bit to evaluating Bayesian model results.  Computation of entropy is quite simply.  If you have two discrete events (total possible events are 2) and the probabilities are known (in retrospect or a prior hypothesized), we can compute entropy $H(p)$.
+
+```{r EntropyDemoCalc}
+p <- c(.2,.8)
+round(-sum(p*log(p)),2)
+```
+
+Consider how two discrete and, as a result, ipsative events (i.e., mutually exclusive) can be plotted with respect to the probability of one.
+
+```{r EntropyFig, warning=FALSE, message=FALSE}
+library(ggplot2)
+tmp <- data.frame(p1=seq(0,1,length=100))
+tmp$p2 <- 1-tmp$p1
+
+binH <- function(x){
+  -sum(x*log(x))
+}
+
+tmp$H <- apply(tmp,1,binH)
+ggplot(tmp,aes(p1,H)) + geom_smooth() + ylab("Entropy (H)") + xlab("Probability of P1")
+
+```
+
+Entropy is maximal when the probability is even at 0.5.  What does that mean?  Think about it.  Maximum uncertainty is best represented as a coin toss.  We spent most of the past 6 weeks talking about priors and uncertainty about priors.  In each of these operations, we specified a uniform prior (i.e., every observation had an equal probability of occurring).  A discrete, binary event has two outcomes and if those outcomes are equal, we are at our maximum uncertainty when $p=0.5$.  
+
+Bayesian updating maximizes entropy (MAXENT).  Think about it.  
+
+In contrast to entropy where our focus is largely on uncertainty, we have divergence $D_{KL}$ that provides us with the average difference in log probabilities between the target (p) and model (q).  Divergence, in short, is a way for us to quantify our accuracy.  We formalize the definition of divergence using the following mathematical notation:
+
+$$D_{KL}(p,q) = \sum_i p_i(log(p_i) - log(q_i)) = \sum_i p_i log(\frac{p_i}{q_i}) $$
+**Divergence** is *"the additional uncertainty induced by using probabilities from one distribution to describe another distribution."*  We use divergence to estimate the distance from our model (q) to reality (p) or, more generally between any two models.  
+
+## Deviance and Simulation
+
+```{r SimTrainTest, eval=FALSE}
+library(rethinking)
+N <- 20
+kseq <- 1:5
+dev <- sapply( kseq , function(k) {
+  print(k);
+  r <- replicate( 1e4 , sim_train_test( N=N, k=k ),mc.cores=20 );
+  c( mean(r[1,]) , mean(r[2,]) , sd(r[1,]) , sd(r[2,]) )
+} )
+
+plot( 1:5 , dev[1,] , ylim=c( min(dev[1:2,])-5 , max(dev[1:2,])+10 ) , xlim=c(1,5.1), xlab="number of parameters" , ylab="deviance" , pch=16 , col=rangi2)
+mtext( concat( "N = ",N ) )
+points( (1:5)+0.1 , dev[2,] )
+for ( i in kseq ) {
+  pts_in <- dev[1,i] + c(-1,+1)*dev[3,i]
+  pts_out <- dev[2,i] + c(-1,+1)*dev[4,i]
+  lines( c(i,i) , pts_in , col=rangi2 )
+  lines( c(i,i)+0.1 , pts_out )
+}
+
+```
+
+## Fit vs. Prediction
+
+Start with a skeptical (**regularizing**) prior that makes the data work harder for the update.
+
+## Assigned Problems
+
+### Easy Problems
+
+#### 7E1.  State the three motivating criteria that define information entropy. Try to express each in your own words.
+
+(1) Continuity. The measure is not discrete, but it may be bounded. So it can have a minimum and maximum, but it must be continuous in between.
+(2) Increasing with the number of events. When more distinct things can happen, and all else is equal, there is more uncertainty than when fewer things can happen.
+(3) Additivity. This is hardest one to understand, for most people. Additivity is desirable because it means we can redefine event categories without changing the amount of uncertainty.
+
+#### 7E2.  Suppose a coin is weighted such that, when it is tossed and lands on a table, it comes up heads 70% of the time. What is the entropy of this coin?
+
+
+```{r 7E2}
+# define probabilities of heads and tails
+p <- c( 0.7 , 0.3 )
+# compute entropy
+-sum( p*log(p) )
+```
+
+#### 7E3.  Suppose a four-sided die is loaded such that, when tossed onto a table, it shows “1” 20%, “2” 25%, “3” 25%, and “4” 30% of the time. What is the entropy of this die?
+
+```{r 7E3}
+# define probabilities of sides
+p <- c( 0.2 , 0.25 , 0.25 , 0.3 )
+# compute entropy
+-sum( p*log(p) )
+```
+
+
+#### 7E4.  Suppose another four-sided die is loaded such that it never shows “4”. The other three sides show equally often. What is the entropy of this die?
+
+```{r 7E4}
+# define probabilities of sides
+p <- c( 1/3 , 1/3 , 1/3 )
+# compute entropy
+-sum( p*log(p) )
+```
+
+
+### Medium Problems
+
+#### 7M1.  Write down and compare the definitions of AIC and WAIC. Which of these criteria is most general? Which assumptions are required to transform the more general criterion into a less general one?
+
+AIC is...
+
+$$AIC = -2log\;P(data|MAP est) + 2p = D_{train} + 2p$$
+where $p$ is hte number of parameters in the model.  WAIC is tougher by notation but is...
+
+$$WAIC = -2(lppd -p_{WAIC}) = -2(\sum log\;P(y_i) - \sum V(y_i)) $$
+where $P(y_i)$ is the likelihood of observation $i$, averaging over the posterior distribution, and $V(y_i)$ is the variance in the log-likelihood of observation i, taking the variance over the posterior distribution.
+Comparing these definitions, each has a term that expresses the fit to the training sample, as well as a term that expresses some penalty for flexibility in fitting to the sample. For AIC, the fit term is simply the "plug-in deviance," $D_{train}$, and the penalty term is twice the number of parameters, $p$.  For WAIC, the fit term is a fully Bayesian log-likelihood that averages over the posterior prediction for each observation separately. This is lppd. The penalty term is the sum of the variances of each log-likelihood.
+
+From more general to less general: WAIC, AIC. When the posterior predictive mean is a good representation of the posterior predictive distribution, and the priors are effectively flat or overwhelmed by the amount of data, then WAIC and AIC will tend to agree.
+
+#### 7M2.  Explain the difference between model selection and model comparison. What information is lost under model selection?
+
+Model selection means ranking models by information criteria (or any other criteria) and choosing the highest ranked model. Model averaging is instead weighting each model by its relative distance from the best model and creating a posterior predictive distribution comprising predictions from each model in proportion to these weights, a prediction “ensemble.” Model selection discards information about model uncertainty. Model averaging retains some of that information, but it still discards some information about model uncertainty, because it compresses the full information about the set of models into a single predictive distribution. Since the full set of ranks and information criteria values cannot be recovered from the averaged predictive distribution, some of that information has been lost. In other words, different model comparison sets with different ranks and information criteria values can produce nearly identical prediction ensembles. But those different model comparison sets may be different in other important ways. For example, inspecting the full model comparison set, with the structure of each model, often reveals why some models fit better than others.
+
+#### 7M3.  When comparing models with an information criterion, why must all models be fit to exactly the same observations? What would happen to the information criterion values, if the models were fit to different numbers of observations? Perform some experiments, if you are not sure.
+
+When one model is fit to fewer (or different) observations, it is being judged on a different target than the other models. If fewer observations are used, the model will usually appear to perform better, because the deviance will smaller due to having less to predict. Less to predict means less prediction error, and deviance (as well as information criteria) is a kind of accumulated error. We have to be careful about this, because most of R’s black-box regression functions like lm, glm, and glmer will automatically and silently drop incomplete cases, reducing the number of observations the model is fit to. This is bad behavior for scientific software, but unfortunately it is the norm.
+
+#### 7M4.  What happens to the effective number of parameters, as measured by PSIS or WAIC, as a prior becomes more concentrated? Why? Perform some experiments, if you are not sure.
+
+As a prior becomes more concentrated around particular parameter values, the model becomes less flexible in fitting the sample. One way to remember this is to think of the prior as representing previous learning from previous observations. So a more concentrated, or peaked, prior represents more previous data. As the model becomes less flexible, the effective number of parameters declines. To perform some simple experiments to demonstrate this, try out this code, changing the value for sigma in the data list. The smaller sigma, the more concentrated the prior and the smaller the
+effective number of parameters should be.
+
+
+```{r 7M4}
+y <- rnorm(10) # execute just once, to get data
+# repeat this, changing sigma each time
+m <- quap(
+  alist(
+    y ~ dnorm(mu,1),
+    mu ~ dnorm(0,sigma)
+    ), data=list(y=y,sigma=10) )
+WAIC(m)
+```
+
+#### 7M5.  Provide an informal explanation of why informative priors reduce overfitting.
+
+Informative priors reduce overfitting by reducing the sensitivity of a model to a sample. Some of the information in a sample is irregular, not a recurring feature of the process of interest.
+
+#### 7M6.  Provide an informal explanation of why overly informative priors result in underfitting.
+
+If a prior is overly informative, then even regular features of a sample will not be learned by a model. In this case, the model may underfit the sample. In case this sounds like a terrifying balancing act, in practice there is usually a broad family of priors which achieve practically indistinguishable estimates from the same sample. The last “hard” practice problem for this chapter provides an example.
+
+### Hard Problems
+
+#### 7H1.  In 2007, The Wall Street Journal published an editorial (“We’re Number One, Alas”) with a graph of corporate tax rates in 29 countries plotted against tax revenue. A badly fit curve was drawn in (reconstructed at right), seemingly by hand, to make the argument that the relationship between tax rate and tax revenue increases and then declines, such that higher tax rates can actually produce less tax revenue. I want you to actually fit a curve to these data, found in data(Laffer). Consider models that use tax rate to predict tax revenue. Compare, using WAIC or PSIS, a straight-line model to any curved models you like. What do you conclude about the relationship between tax rate and tax revenue?
+
+#### 7H2.  In the Laffer data, there is one country with a high tax revenue that is an outlier. Use PSIS and WAIC to measure the importance of this outlier in the models you fit in the previous problem. Then use robust regression with a Student’s t distribution to revisit the curve fitting problem. How much does a curved relationship depend upon the outlier point?
+
+It’s probably obvious from the prompt that the original curve was hand-drawn and not
+the result of any fitting procedure. And you can see there is a high outlier point, while the rest of the points show a general increase. But let’s take this seriously and polish our modeling skills. Lots of combinations of models will produce the same general inference. I’ll start with comparing linear to polynomial models. Then I’ll try a spline. Then I’ll consider a robust regression to cope better with the outlier.
+
+Here is a linear fit, together with a quadratic and cubic fit:
+
+```{r 7H1and2}
+library(rethinking)
+data(Laffer)
+d <- Laffer
+d$T <- standardize( d$tax_rate )
+d$R <- standardize( d$tax_revenue )
+# linear model
+m7H1a <- quap(
+  alist(
+    R ~ dnorm( mu , sigma ),
+    mu <- a + b*T,
+    a ~ dnorm( 0 , 0.2 ),
+    b ~ dnorm( 0 , 0.5 ),
+    sigma ~ dexp(1)
+    ) , data=d )
+# quadratic model
+m7H1b <- quap(
+  alist(
+    R ~ dnorm( mu , sigma ),
+    mu <- a + b*T + b2*T^2,
+    a ~ dnorm( 0 , 0.2 ),
+    c(b,b2) ~ dnorm( 0 , 0.5 ),
+    sigma ~ dexp(1)
+    ) , data=d )
+# cubic model
+m7H1c <- quap(
+  alist(
+    R ~ dnorm( mu , sigma ),
+    mu <- a + b*T + b2*T^2 + b3*T^3,
+    a ~ dnorm( 0 , 0.2 ),
+    c(b,b2,b3) ~ dnorm( 0 , 0.5 ),
+    sigma ~ dexp(1)
+    ) , data=d )
+compare( m7H1a , m7H1b , m7H1c , func=PSIS )
+```
+
+How do these models compare?
+
+Not much support for the wiggly models over the linear one. But PSIS also warns about high leverage points. You can probably guess from scatterplot which point is causing the problem. If you peek at the pointwise k values, you’ll see:
+
+```{r 7H1and2c1}
+PSISk(m7H1a)
+```
+
+Point 12 is much over 1. That’s the nation with the very high tax revenue value. I think it’s Norway, actually, and it results from an accounting trick involving oil revenue. It’ll be useful to plot the posterior predictions of each model.
+
+```{r 7H1and2c2}
+T_seq <- seq( from=-3.2 , to=1.2 , length.out=30 )
+la <- link( m7H1a , data=list(T=T_seq) )
+lb <- link( m7H1b , data=list(T=T_seq) )
+lc <- link( m7H1c , data=list(T=T_seq) )
+plot( d$T , d$R , xlab="tax rate" , ylab="revenue" )
+mtext( "linear model" )
+lines( T_seq , colMeans(la) )
+shade( apply( la , 2 , PI ) , T_seq )
+plot( d$T , d$R , xlab="tax rate" , ylab="revenue" )
+mtext( "quadratic model" )
+lines( T_seq , colMeans(lb) )
+shade( apply( lb , 2 , PI ) , T_seq )
+plot( d$T , d$R , xlab="tax rate" , ylab="revenue" )
+mtext( "cubic model" )
+lines( T_seq , colMeans(lc) )
+shade( apply( lc , 2 , PI ) , T_seq )
+```
+
+The polynomial models do bend the right way, but they aren’t bending much. If anything, they offer stronger evidence that more tax produces more revenue, not that very high tax reduces revenue. For the sake of the exercise, let’s consider a basis spline. Refer back to Chapter 4, the last section, if you’ve forgotten splines.
+
+```{r 7H1and2c3}
+num_knots <- 15
+knot_list <- quantile( d$T , probs=seq(0,1,length.out=num_knots) )
+library(splines)
+B <- bs(d$T,
+knots=knot_list[-c(1,num_knots)] ,
+degree=3 , intercept=TRUE )
+m7H1s <- quap(
+  alist(
+    R ~ dnorm( mu , sigma ) ,
+    mu <- a + B %*% w ,
+    a ~ dnorm(0,1),
+    w ~ dnorm(0,1),
+    sigma ~ dexp(1)
+    ), data=list( R=d$R , B=B ) ,
+  start=list( w=rep( 0 , ncol(B) ) ) )
+compare( m7H1a , m7H1b , m7H1c , m7H1s , func=PSIS )
+```
+
+The coefficients aren’t interpretable, but let’s compare to the previous models (see above).  Not good.  What do the predictions look like?
+
+```{r 7H1and2c4}
+mu <- link( m7H1s )
+mu_PI <- apply( mu , 2 , PI )
+plot( d$T , d$R , xlab="tax rate" , ylab="revenue" )
+mtext( "basis spline" )
+o <- order( d$T )
+lines( d$T[o] , colMeans(mu)[o] )
+shade( mu_PI[,o] , d$T[o] )
+```
+
+If you really want to interpret that as support for the curved relationship, good luck. You might try more rigid splines, with lower polynomial order, fewer knots, and tighter weights, to see if this can be made more sensible. But clearly this is a curve-fitting exercise, not science, at this point. For the Student-t model, we just need to replace the normal likelihood. I’ll use ν = 2, so the tails
+are satisfyingly thick.
+
+```{r 7H1and2c5}
+# linear model with student-t
+m7H1d <- quap(
+alist(
+  R ~ dstudent( 2 , mu , sigma ),
+  mu <- a + b*T,
+  a ~ dnorm( 0 , 0.2 ),
+  b ~ dnorm( 0 , 0.5 ),
+  sigma ~ dexp(1)
+  ) , data=d )
+compare( m7H1a , m7H1b , m7H1c , m7H1s , m7H1d , func=PSIS )
+```
+Oh PSIS likes this one. It also doesn’t itself throw any Pareto-k warnings. If you like, try to polynomial models with the Student-t likelihood. Overall, there is no obvious support for a strongly increasingthen-decreasing relationship between tax rate and tax revenue.
+
+#### 7H3.  Consider three fictional Polynesian islands. On each there is a Royal Ornithologist charged by the king with surveying the bird population. They have each found the following proportions of 5 important bird species:
+
+<data omitted>
+
+Notice that each row sums to 1, all the birds. This problem has two parts. It is not computationally complicated. But it is conceptually tricky. First, compute the entropy of each island’s bird distribution. Interpret these entropy values. Second, use each island’s bird distribution to predict the other two. This means to compute the KL divergence of each island from the others, treating each island as if it were a statistical model of the other islands. You should end up with 6 different KL divergence values. Which island predicts the others best? Why?
+
+To compute the entropies, we just need a function to compute the entropy. Information entropy, as defined in lecture and the book, is simply:
+
+$$H(p) = -\sum_i p_i log(p_i) $$
+where p is a vector of probabilities summing to 1.  In R, we code the function like this:
+
+```{r 7H3}
+H <- function(p){
+  out <- -sum(p*log(p))
+  return(out)
+}
+```
+
+Here are the data and application to the function H:
+
+```{r 7H3c1}
+IB <- list()
+IB[[1]] <- c( 0.2 , 0.2 , 0.2 , 0.2 , 0.2 )
+IB[[2]] <- c( 0.8 , 0.1 , 0.05 , 0.025 , 0.025 )
+IB[[3]] <- c( 0.05 , 0.15 , 0.7 , 0.05 , 0.05 )
+sapply( IB , H )
+```
+
+The first island has the largest entropy, followed by the third, and then the second in last place. Why is this? Entropy is a measure of the evenness of a distribution. The first islands has the most even distribution of birbs. This means you wouldn’t be very surprised by any particular bird. The second island, in contrast, has a very uneven distribution of birds. If you saw any bird other than the first species, it would be surprising.
+
+Now we need K-L distance, so let’s write a function for it:
+
+```{r 7H3c2}
+DKL <- function(p,q){
+  out <- sum( p*(log(p)-log(q)) )
+  return(out)
+}
+```
+
+This is the distance from q to p, regarding p as true and q as the model. Now to use each island as a model of the others, we need to consider the different ordered pairings. I’ll just make a matrix and loop over rows and columns:
+
+```{r 7H3c3}
+Dm <- matrix( NA , nrow=3 , ncol=3 )
+for ( i in 1:3 ){
+  for ( j in 1:3 ){
+    Dm[i,j] <- DKL( IB[[j]] , IB[[i]] )
+  }
+}
+round( Dm , 2 )
+```
+
+The way to read this is each row as a model and each column as a true distribution. So the first island, the first row, has the smaller distances to the other islands. This makes sense, since it has the highest entropy. Why does that give it a shorter distance to the other islands? Because it is less surprised by the other islands, due to its high entropy
+
+
+#### 7H4.  Recall the marriage, age, and happiness collider bias example from Chapter 6. Run models m6.9 and m6.10 again (page 178). Compare these two models using WAIC (or PSIS, they will produce identical results). Which model is expected to make better predictions? Which model provides the correct causal inference about the influence of age on happiness? Can you explain why the answers to these two questions disagree?
+
+```{r 7H4}
+library(rethinking)
+d <- sim_happiness( seed=1977 , N_years=1000 )
+d2 <- d[ d$age>17 , ] # only adults
+d2$A <- ( d2$age - 18 ) / ( 65 - 18 )
+d2$mid <- d2$married + 1
+m6.9 <- quap(
+  alist(
+    happiness ~ dnorm( mu , sigma ),
+    mu <- a[mid] + bA*A,
+    a[mid] ~ dnorm( 0 , 1 ) ,
+    bA ~ dnorm( 0 , 2 ) ,
+    sigma ~ dexp(1)
+    ) , data=d2 )
+
+m6.10 <- quap(
+  alist(
+    happiness ~ dnorm( mu , sigma ),
+    mu <- a + bA*A,
+    a ~ dnorm( 0 , 1 ),
+    bA ~ dnorm( 0 , 2 ),
+    sigma ~ dexp(1)
+    ) , data=d2 )
+
+compare( m6.9 , m6.10 )
+```
+
+The model that produces the invalid inference, m6.9, is expected to predict much better. And it would. This is because the collider path does convey actual association. We simply end up mistaken about the causal inference. We should not use WAIC (or LOO) to choose among models, unless we have some clear sense of the causal model. These criteria will happily favor confounded models.
+
+#### 7H5.  Revisit the urban fox data, data(foxes), from the previous chapter’s practice problems. Use WAIC or PSIS based model comparison on five different models, each using weight as the outcome, and containing these sets of predictor variables:
+(1)  avgfood + groupsize + area
+(2)  avgfood + groupsize
+(3)  groupsize + area
+(4)  avgfood
+(5)  area
+Can you explain the relative differences in WAIC scores, using the fox DAG from the previous chapter? Be sure to pay attention to the standard error of the score differences (dSE).
+
+```{r 7H5}
+library(rethinking)
+data(foxes)
+d <- foxes
+d$W <- standardize(d$weight)
+d$A <- standardize(d$area)
+d$F <- standardize(d$avgfood)
+d$G <- standardize(d$groupsize)
+
+m1 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bF*F + bG*G + bA*A,
+    a ~ dnorm(0,0.2),
+    c(bF,bG,bA) ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+
+m2 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bF*F + bG*G,
+    a ~ dnorm(0,0.2),
+    c(bF,bG) ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+
+m3 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bG*G + bA*A,
+    a ~ dnorm(0,0.2),
+    c(bG,bA) ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+
+m4 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bF*F,
+    a ~ dnorm(0,0.2),
+    bF ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+
+m5 <- quap(
+  alist(
+    W ~ dnorm( mu , sigma ),
+    mu <- a + bA*A,
+    a ~ dnorm(0,0.2),
+    bA ~ dnorm(0,0.5),
+    sigma ~ dexp(1)
+    ), data=d )
+
+compare( m1 , m2 , m3 , m4 , m5 )
+```
+
+Notice that the top three models are m1, m3, and m2. They have very similar WAIC values. The differences are small and smaller in all cases than the standard error of the difference. WAIC sees these models are tied. This makes sense, given the DAG, because as long as a model has groupsize in it, we can include either avgfood or area or both and get the same inferences. Another way to think of this is that the influence of good, adjusting for group size, is (according to the DAG) the same as the influence of area, adjusting for group size, because the influence of area is routed entirely through food and group size. There are no backdoor paths.
+
+What about the other two models, m4 and m5? These models are tied with one another, and both omit group size. Again, the influence of area passes entirely through food. So including only food or only area should produce the same inference—the total causal influence of area (or food) is just about zero. That’s indeed what the posterior distributions suggest:
+
+```{r 7H5c1}
+coeftab(m4,m5)
+```
+
