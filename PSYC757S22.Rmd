@@ -1657,7 +1657,7 @@ N <- 20
 kseq <- 1:5
 dev <- sapply( kseq , function(k) {
   print(k);
-  r <- replicate( 1e4 , sim_train_test( N=N, k=k ),mc.cores=20 );
+  r <- mcreplicate( 1e4 , sim_train_test( N=N, k=k ), mc.cores = 4 );
   c( mean(r[1,]) , mean(r[2,]) , sd(r[1,]) , sd(r[2,]) )
 } )
 
@@ -1675,7 +1675,9 @@ for ( i in kseq ) {
 
 ## Fit vs. Prediction
 
-Start with a skeptical (**regularizing**) prior that makes the data work harder for the update.
+1. Start with a skeptical (**regularizing**) prior that makes the data work harder for the update.  Too skeptical and you learn nothing from the data but too lenient and you let the data do all the talking.  Experiment.
+2. Cross-validate with another sample.  Be mindful of what makes "another sample."  In many instances, data analysts use a split sampling procedure and that does not really warrant the moniker of "another sample" because the sample is the same - NOT different or what we all might agree upon as "another."  See if you can reproduce the predictions from one sample into another.  Richard emphasizes several approaches but I want to caution you all that the options he mentions are well-worn in the statistical literature.  Specifically, the "leave out one" method is called jackknifed samples and is a form of resampling - but only for parameter estimation NOT for predictive validity.  The out of sample method Richard describes is the root of the information criteria that he explains but know that there are other methods that are much faster and more efficient in testing model performance.   
+3. Apply an information criterion to get an estimate of the "out of sample" method explained in the point above but does so by applying theory rather than brute force.  You have AIC (not generally recommended due to limited posterior and prior applicability), DIC (limited to posterior normal distributions where $N >> k$), WAIC (good compromise but tends to favor overfitting), and BIC (not Bayesian and certaintly limited BUT penalizes for complexity).
 
 ## Assigned Problems
 
@@ -2049,3 +2051,9 @@ What about the other two models, m4 and m5? These models are tied with one anoth
 coeftab(m4,m5)
 ```
 
+# Chapter 8
+
+## Key Points
+
+1. Conditioning.  Think of your predictors as conditioning statements.  Choose wisely though.
+2. Interactions (aka moderation).
