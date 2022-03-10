@@ -2053,7 +2053,9 @@ coeftab(m4,m5)
 
 # Chapter 8
 
+
 ## Key Points
 
 1. Conditioning.  Think of your predictors as conditioning statements.  Choose wisely though.
 2. Interactions (aka moderation).
+3. foo blah blah (just checking git)
