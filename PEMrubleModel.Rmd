@@ -1,0 +1,71 @@
+---
+title: "R Notebook"
+date: "`r paste('Last edits on:',date(), sep=' ')`"
+output: 
+  html_document:
+    toc: true
+    number_sections: false
+    toc_float: true
+    df_print: paged
+    code_folding: show
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r preamble, message=FALSE, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	background = "#ADD8E6",
+	cache = TRUE,
+	tidy = 'styler',
+	class.source = "bg-warning",
+	class.output = "bg-success",
+	fig_caption = TRUE,
+	digits = 3
+)
+
+
+```
+
+```{r libraries, include=FALSE}
+using<-function(...) {
+    libs<-unlist(list(...))
+    req<-unlist(lapply(libs,require,character.only=TRUE))
+    need<-libs[req==FALSE]
+    if(length(need)>0){ 
+        install.packages(need)
+        lapply(need,require,character.only=TRUE)
+    }
+}
+using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","rvest","dagitty","priceR","lubridate")
+
+round_df <- function(df, digits) {
+  nums <- vapply(df, is.numeric, FUN.VALUE = logical(1))
+  df[,nums] <- round(df[,nums], digits = digits)
+  (df)
+}
+```
+
+# Data
+
+I need FOREX data captured by day (end of day) for consecutive days prior to and throughout the Russian war on Ukraine.  Before getting into to many details, I need not just the Ruble data but I capture as many relevant variables during that time to better understand (and predict) subsequent Ruble exchange values (relative to the US dollar).
+
+```{r RubleData}
+dat.ex <- priceR::historical_exchange_rates("USD","RUB","2022-02-01",paste(lubridate::today()))
+dat.ex
+```
+
+
+
+
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

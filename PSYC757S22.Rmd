@@ -2686,3 +2686,19 @@ plot( precis( list(mu=mu) , 2 ) , labels=row_labels )
 ```
 I added informative labels. FFW means: French wine, French judge, White wine. So the first four rows are as judged by French judges. The last four are as judged by American judges. The two rows that jump out are the 4th and the 2nd-to-last, AFR and FAR. Those are NJ red wines as judged by French judges and French red wines as judged by American judges. French judges did not like NJ reds so much (really only one NJ red, if you look back at Problem 1). And American judges liked French reds more. Besides these two interactions, notice that it is very hard to figure this out from the table of coefficients.
 
+# Chapter 9
+
+At long last, we get to MCMC.  I hope you find Richard's take on the Metropolis-Hastings algorithm to be useful in so far as understanding the logic.  He took great pains to make it understandable and I think he did a bang-up job.  Before I get too far into the weeds, let me warn you a bit about these details.  Most of the inner workings of Stan are not terribly important for you to learn in great detail.  Get a jist of the ideas NOT the details - unless you have endless time to learn trivial little details.  Did you learn thermodynamics so you could figure out what was happening with the car's radiator?  Yeah, didn't think so.  Learn the broad strokes so you can choose wisely as a scientist first, algorithm enthusiast way last.
+
+The entire chapter brings us to focus on MCMC.  Keep in mind that the algorithm is used to help us estimate multidimensional spaces of mixed (or completely conjugate) distributions.  Think of it as a method for us to map out very complicated n-dimensional spaces.  In the simplest sense, imagine trying to map out probabilistically the height of grass blades in rolling hills that move over time.  Yep, complicated.  We need these procedures.  They are not a panacea for all our problems in Bayesian analyses but they sure help.
+
+## Key Points
+
+1. We use MCMC to help us solve the problems that were previously solved using other "brute force" numerical algorithms.  Why a new method?  Efficiency.  Simple as that.
+2. Not all efficiency increases come without some costs.  We do gain access to more complicated models but in the process we also throw more at our computers.  The random walk processes covered under the moniker of MCMC help us estimate high dimensional problems.  
+3. Despite the increase in efficiency and the opportunity to estimate distributions using random processes, we are limited by M-H and Gibbs sampling because they are not ALWAYS efficient.
+4. Conjugate priors.  What are they?  What are the implications?  Prior distribution equal in family to the posterior.  We don't always have those convenient similarities in distributions.  NOTE:  I am not saying that the parameters must be equal; rather the family (e.g., Normal, beta, exponential, etc.) must be the SAME.
+5. As the number of parameters grows, the inefficiencies of ANY Markov chain approach increases. (Concentration of Measure).
+6. Gibbs $>$ Metropolis methods but both suffer from inefficiencies because they rely on a random walk process - one that involves less thought but also comes with less efficiency.  Refer to Jaynes quote because that point is at the heart of why HMC tends to be a more valuable approach (in some respects).
+7. Hamilton (or Hybrid) Monte Carlo (HMC) method is more computationally intensive but more efficient (requires fewer samples because it rejects fewer).  The random walk reduces computational demands but, as Richard shows, results in inefficiencies with respect to delivering a final solution.
+8. More in class....
