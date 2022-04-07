@@ -45,6 +45,27 @@ round_df <- function(df, digits) {
 }
 ```
 
+# The Model to Test
+
+```{r TModel}
+Tdag <- dagitty('dag {"Beh Int" [outcome,pos="-0.272,-0.078"]
+"SR Trust" [pos="-0.327,-0.077"]
+GI [pos="-0.398,-0.082"]
+Rel [pos="-0.402,-0.077"]
+Trust [latent,pos="-0.367,-0.077"]
+Unc [pos="-0.402,-0.072"]
+"SR Trust" -> "Beh Int"
+Trust -> "SR Trust"
+Trust -> GI
+Trust -> Rel
+Trust -> Unc
+}
+')
+plot(Tdag)
+impliedConditionalIndependencies(Tdag)
+```
+
+
 # The Data
 
 I have over 8 studies of trust data; for this class, I will use only one study to make life simpler.
