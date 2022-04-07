@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Trust Model"
 date: "`r paste('Last edits on:',date(), sep=' ')`"
 output: 
   html_document:
@@ -36,7 +36,7 @@ using<-function(...) {
         lapply(need,require,character.only=TRUE)
     }
 }
-using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","rvest","dagitty","priceR","lubridate","bayesforecast")
+using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","dagitty")
 
 round_df <- function(df, digits) {
   nums <- vapply(df, is.numeric, FUN.VALUE = logical(1))
@@ -45,16 +45,13 @@ round_df <- function(df, digits) {
 }
 ```
 
-# Data
+# The Data
 
-I need FOREX data captured by day (end of day) for consecutive days prior to and throughout the Russian war on Ukraine.  Before getting into to many details, I need not just the Ruble data but I capture as many relevant variables during that time to better understand (and predict) subsequent Ruble exchange values (relative to the US dollar).
+I have over 8 studies of trust data; for this class, I will use only one study to make life simpler.
 
-```{r RubleData}
-dat.ex <- priceR::historical_exchange_rates("USD","RUB","2022-02-01",paste(lubridate::today()))
-dat.ex
+```{r TData}
+
 ```
-
-
 
 
 

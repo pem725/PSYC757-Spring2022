@@ -2745,9 +2745,10 @@ The best test of convergence is always to compare multiple chains. So the best s
 
 Here is the model again, now using a uniform prior for sigma:
 
-```{r 9M1a}
+```{r 9M1a, message=FALSE, warning=FALSE}
 # load and rep data
 library(rethinking)
+library(cmdstanr)
 data(rugged)
 d <- rugged
 d$log_gdp <- log(d$rgdppc_2000)
@@ -2837,7 +2838,7 @@ m9.1 <- ulam(
     a[cid] ~ dnorm( 1 , 0.1 ),
     b[cid] ~ dnorm( 0 , 0.3 ),
     sigma ~ dexp( 1 )
-  ) , start=start , data=dat_slim , chains=1 , iter=1 )
+  ) , start=start , data=dat_slim , chains=1 , iter=1 , warmup=100)
 # define warmup values to run through
 warm_list <- c(5,10,100,500,1000)
 # first make matrix to hold n_eff results
