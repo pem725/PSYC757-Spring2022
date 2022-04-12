@@ -47,8 +47,12 @@ round_df <- function(df, digits) {
 
 # The Model to Test
 
-```{r TModel}
-Tdag <- dagitty('dag {"Beh Int" [outcome,pos="-0.272,-0.078"]
+I have in mind two models - one that represents trust as a latent variable that I will compute outside of my stan code and one that represents trust as an emergent variable.  Why treat them differently?  Good question.  There is a tension in the literature that posits trust to be either latent or emergent.  Instead of worrying about how to handle it in the class, I opted to do two models and compare them.  Why not?
+
+## Model 1:  Trust as a latent variable
+
+```{r TModel1}
+Tdag1 <- dagitty('dag {"Beh Int" [outcome,pos="-0.272,-0.078"]
 "SR Trust" [pos="-0.327,-0.077"]
 GI [pos="-0.398,-0.082"]
 Rel [pos="-0.402,-0.077"]
@@ -61,27 +65,60 @@ Trust -> Rel
 Trust -> Unc
 }
 ')
-plot(Tdag)
-impliedConditionalIndependencies(Tdag)
+plot(Tdag1)
+impliedConditionalIndependencies(Tdag1)
 ```
 
+## Model 2: Trust as an emergent variable
+
+```{r TModel2}
+Tdag2 <- dagitty('dag {"Beh Int" [outcome,pos="-0.272,-0.078"]
+"SR Trust" [pos="-0.327,-0.077"]
+GI [pos="-0.398,-0.082"]
+Rel [pos="-0.402,-0.077"]
+Trust [outcome,pos="-0.367,-0.077"]
+Unc [pos="-0.402,-0.072"]
+"SR Trust" -> "Beh Int"
+Trust -> "SR Trust"
+Trust <- GI
+Trust <- Rel
+Trust <- Unc
+}
+')
+plot(Tdag2)
+impliedConditionalIndependencies(Tdag2)
+```
 
 # The Data
 
 I have over 8 studies of trust data; for this class, I will use only one study to make life simpler.
 
 ```{r TData}
+Tdat <- read.csv("/home/pem725/GoogleDrive/00 Most Current Papers/Trust - MRES New Model/Data/dat5alll.csv",header=T)[,-1]
+describe(Tdat)
+```
 
+So I have B for my DV and G, U1, R as my manifest indicators of trust (the construct) that lead to predicting B through T (self-reported trust).  The model seems complicated but it is not really.  For each model, I need to create new variables.
+
+## Model 1 Data Management
+
+```{r M1Data, warning=FALSE}
+pcor1 <- cor(Tdat[,c(3,4,6)],use="complete.obs")
+Tdat.lwcN <- nrow(Tdat[complete.cases(Tdat[,c(3,4,6)]),])
+pc1 <- principal(pcor1,1,residuals=TRUE,n.obs=Tdat.lwcN, scores = TRUE)
+pc1.wts <- as.data.frame(pc1$weights)
+str(pc1.wts)
+pc1.wts
 ```
 
 
 
-```{r}
-plot(cars)
+
+# The Stan Models
+
+
+
+```{r Model1}
+
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
