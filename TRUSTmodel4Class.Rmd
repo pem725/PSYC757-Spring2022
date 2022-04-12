@@ -116,7 +116,7 @@ ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 ## Model 2 Data Management
 
 ```{r M2Data}
-
+## added data step here for efa
 
 ```
 
@@ -127,6 +127,6 @@ ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 ## Model 1
 
 ```{r Model1}
-
+# stan code for m1
 ```
 
