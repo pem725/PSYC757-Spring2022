@@ -91,7 +91,7 @@ impliedConditionalIndependencies(Tdag2)
 
 # The Data
 
-I have over 8 studies of trust data; for this class, I will use only one study to make life simpler.
+I have over 8 studies of trust data; for this class, I will use only one study to make life simpler.  The data come from a fully crossed design whereby participants read vignettes and rated the vignettes based upon several facets and then were asked to rate how much they would trust the agent in the vignette.  Our aim was to better understand the factors that lead to people indicating trust.  
 
 ```{r TData}
 Tdat <- read.csv("/home/pem725/GoogleDrive/00 Most Current Papers/Trust - MRES New Model/Data/dat5alll.csv",header=T)[,-1]
@@ -113,14 +113,18 @@ Tdat$tx3.pc1 <- pc1.wts$PC1[1]*scale(Tdat$G) + pc1.wts$PC1[2]*scale(Tdat$U1) + p
 ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 ```
 
-# Model 2 Data Management
+## Model 2 Data Management
 
+```{r M2Data}
+
+
+```
 
 
 
 # The Stan Models
 
-
+## Model 1
 
 ```{r Model1}
 
