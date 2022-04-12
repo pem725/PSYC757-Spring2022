@@ -108,8 +108,12 @@ Tdat.lwcN <- nrow(Tdat[complete.cases(Tdat[,c(3,4,6)]),])
 pc1 <- principal(pcor1,1,residuals=TRUE,n.obs=Tdat.lwcN, scores = TRUE)
 pc1.wts <- as.data.frame(pc1$weights)
 str(pc1.wts)
-pc1.wts
+#pc1.wts
+Tdat$tx3.pc1 <- pc1.wts$PC1[1]*scale(Tdat$G) + pc1.wts$PC1[2]*scale(Tdat$U1) + pc1.wts$PC1[3]*scale(Tdat$R)
+ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 ```
+
+# Model 2 Data Management
 
 
 
