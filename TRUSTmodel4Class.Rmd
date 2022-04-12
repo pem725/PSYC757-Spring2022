@@ -115,6 +115,10 @@ ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 
 # Model 2 Data Management
 
+```{r M2Data}
+
+
+```
 
 
 
