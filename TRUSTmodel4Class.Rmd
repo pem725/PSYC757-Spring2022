@@ -100,33 +100,80 @@ describe(Tdat)
 
 So I have B for my DV and G, U1, R as my manifest indicators of trust (the construct) that lead to predicting B through T (self-reported trust).  The model seems complicated but it is not really.  For each model, I need to create new variables.
 
-## Model 1 Data Management
+## Model 1 (Latent Trust) Data Management
 
 ```{r M1Data, warning=FALSE}
+## added data step here for efa
 pcor1 <- cor(Tdat[,c(3,4,6)],use="complete.obs")
 Tdat.lwcN <- nrow(Tdat[complete.cases(Tdat[,c(3,4,6)]),])
+efa1 <- fa(Tdat[,c(3,4,6)],1)
+#Tdat$tx3.efa1
+Tdat$tx3.efa1 <- factor.scores(Tdat[,c(3,4,6)],efa1,impute = "median")$scores
+ggplot(Tdat,aes(tx3.efa1)) + geom_histogram()
+```
+
+## Model 2 (Emergent Trust) Data Management
+
+```{r M2Data}
+
 pc1 <- principal(pcor1,1,residuals=TRUE,n.obs=Tdat.lwcN, scores = TRUE)
 pc1.wts <- as.data.frame(pc1$weights)
 str(pc1.wts)
 #pc1.wts
 Tdat$tx3.pc1 <- pc1.wts$PC1[1]*scale(Tdat$G) + pc1.wts$PC1[2]*scale(Tdat$U1) + pc1.wts$PC1[3]*scale(Tdat$R)
 ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
-```
-
-## Model 2 Data Management
-
-```{r M2Data}
-## added data step here for efa
 
 ```
 
+# Model Priors
+
+We need to model priors for each of the parameters of interest.  To simplify my modeling, I intend to use the same priors for each model.  Thus, I only need to "envision" the betas (regression parameters or log odds ratios) for one model and use it for both.  
+
+
+
+## DV Priors
+
+I have a binary DV (Behavioral Intent to Trust the Agent) that is coded as "1" for the person indicating the intent to trust the agent and as "0" for the the person indicating the intent NOT to trust the agent.  Given that coding, I envision a beta distribution with the following parameters:
+
+```{r DVpriors}
+# Assume a fixed N for hypothetical reasons:
+
+DVprior.dat <- data.frame(NTrust=0:16,
+                          P.NTrust=0:16/16,
+                          ExpCts=c(2,3,6,8,10,12,13,12,9,8,5,4,3,2,1,1,1)
+                          )
+DVprior.dat$TotCts <- DVprior.dat$NTrust*DVprior.dat$ExpCts
+DVprior.dat$DensTotCts <- DVprior.dat$TotCts/sum(DVprior.dat$TotCts)
+DVprior.dat$ExpBeta <- dbeta((0:16/16),sum(DVprior.dat$TotCts),sum(DVprior.dat$ExpCts)*16 - sum(DVprior.dat$TotCts))
+#DVprior.dat$Scenes <- as.factor(DVprior.dat$Scenes)
+#sum(DVprior.dat$ExpCts)
+DVprior.dat
+p1 <- ggplot(DVprior.dat,aes(x=P.NTrust,y=(ExpCts/sum(ExpCts))*16)) + geom_point()
+p1 + geom_line(aes(x=P.NTrust,y=ExpBeta))
+```
+
+The priors for my DV are a bit cryptic but they work just fine.  My priors are pretty strong (i.e., regularlizing for sure) so I wonder how much I will learn from the data.  Perhaps a ton.  When we shift to modeling, I will probably change priors from these strong priors to more naive priors such as Jeffreys' priors (i.e., beta(.5,.5)).  I will use the beta function for my priors even though it does not really reflect my hunch.  
+
+## Beta Priors
+
+I now shift my attention to coming up with priors for my paths between variables.  Each model has two paths that I must estimate.  
+
+```{r BetaPriors}
+
+```
 
 
 # The Stan Models
 
-## Model 1
+## Model 1: Stan Latent Trust
 
-```{r Model1}
+```{r Model1Latent}
 # stan code for m1
+```
+
+## Model 2: Stan Emergent Trust
+
+```{r Model2Emergent}
+# stan code for m2
 ```
 
