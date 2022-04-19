@@ -161,7 +161,7 @@ My results so far had me questioning the use of a beta distribution when modelin
 2. [Simulation Based Calibration (SBC) with the Beta-Binomial Model](https://cran.r-project.org/web/packages/rstan/vignettes/SBC.html)
 3. [Bernoulli Logistic Model](https://discourse.mc-stan.org/t/assessing-priors-for-bernoulli-logistic-model/14864)
 4. [Validating Baysian Inference Algorithms with SBC](https://arxiv.org/pdf/1804.06788.pdf)
-5. and then....I went down an internet rabbit hole of Rasch models and such
+5. and then....I went down an internet rabbit hole of [Rasch models](https://mc-stan.org/docs/2_29/stan-users-guide/item-response-models.html) and such without much headway.
 
 Tuesday, I will regale you all with my exploits and where I stand.
 
