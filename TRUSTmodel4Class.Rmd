@@ -155,7 +155,7 @@ p1 + geom_line(aes(x=P.NTrust,y=ExpBeta))
 
 The priors for my DV are a bit cryptic but they work just fine.  My priors are pretty strong (i.e., regularlizing for sure) so I wonder how much I will learn from the data.  Perhaps a ton.  When we shift to modeling, I will probably change priors from these strong priors to more naive priors such as Jeffreys' priors (i.e., beta(.5,.5)).  I will use the beta function for my priors even though it does not really reflect my hunch.  
 
-My results so far had me questioning the use of a beta distribution when modeling my depedent variable.  As a result, I chose to step back and start reading a bit more about various alternatives.  Here were my resources:
+My results so far had me questioning the use of a beta distribution when modeling my dependent variable.  As a result, I chose to step back and start reading a bit more about various alternatives.  Here were my resources:
 
 1. [The Beta-Binomial Bayesian Model](https://www.bayesrulesbook.com/chapter-3.html)
 2. [Simulation Based Calibration (SBC) with the Beta-Binomial Model](https://cran.r-project.org/web/packages/rstan/vignettes/SBC.html)
