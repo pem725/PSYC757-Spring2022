@@ -36,7 +36,7 @@ using<-function(...) {
         lapply(need,require,character.only=TRUE)
     }
 }
-using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","dagitty")
+using("tidyverse","ggplot2","psych","corrplot","DT","formatR","ggExtra","car","rethinking","rstan","dagitty","brms","bayestestR")
 
 round_df <- function(df, digits) {
   nums <- vapply(df, is.numeric, FUN.VALUE = logical(1))
@@ -96,6 +96,7 @@ I have over 8 studies of trust data; for this class, I will use only one study t
 
 ```{r TData}
 Tdat <- read.csv("/home/pem725/GoogleDrive/00 Most Current Papers/Trust - MRES New Model/Data/dat5alll.csv",header=T)[,-1]
+Tdat$B <- Tdat$B-1
 describe(Tdat)
 ```
 
@@ -176,12 +177,17 @@ HINT1:  [Mediation with brms](https://discourse.mc-stan.org/t/mediation-question
 HINT2:  
 
 
-## Beta Priors
+## BRMS models
 
 I now shift my attention to coming up with priors for my paths between variables.  Each model has two paths that I must estimate.  
 
-```{r BetaPriors}
 
+```{r BRMSmodels}
+efa.fit <- brm(B ~ T * tx3.efa1 + (1 + T * tx3.efa1 | scen), 
+               data=Tdat, family = bernoulli, 
+               prior = c(prior(normal(0, 2), class = Intercept),
+               prior(normal(0, 2), class = b)))
+summary(efa.fit)
 ```
 
 
