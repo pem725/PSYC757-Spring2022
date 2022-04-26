@@ -188,6 +188,13 @@ efa.fit <- brm(B ~ T * tx3.efa1 + (1 + T * tx3.efa1 | scen),
                prior = c(prior(normal(0, 2), class = Intercept),
                prior(normal(0, 2), class = b)))
 summary(efa.fit)
+
+pca.fit <- brm(B ~ T * tx3.pc1 + (1 + T * tx3.pc1 | scen), 
+               data=Tdat, family = bernoulli, 
+               prior = c(prior(normal(0, 2), class = Intercept),
+               prior(normal(0, 2), class = b)))
+summary(pca.fit)
+
 ```
 
 
