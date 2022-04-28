@@ -96,7 +96,7 @@ I have over 8 studies of trust data; for this class, I will use only one study t
 
 ```{r TData}
 Tdat <- read.csv("/home/pem725/GoogleDrive/00 Most Current Papers/Trust - MRES New Model/Data/dat5alll.csv",header=T)[,-1]
-Tdat$B <- Tdat$B-1
+Tdat$B <- abs(Tdat$B-2) # now B = 1 for yes and B = 0 for no
 describe(Tdat)
 ```
 
@@ -110,19 +110,20 @@ pcor1 <- cor(Tdat[,c(3,4,6)],use="complete.obs")
 Tdat.lwcN <- nrow(Tdat[complete.cases(Tdat[,c(3,4,6)]),])
 efa1 <- fa(Tdat[,c(3,4,6)],1)
 #Tdat$tx3.efa1
-Tdat$tx3.efa1 <- factor.scores(Tdat[,c(3,4,6)],efa1,impute = "median")$scores
+Tdat$tx3.efa1 <- factor.scores(Tdat[,c(3,4,6)],efa1)$scores
 ggplot(Tdat,aes(tx3.efa1)) + geom_density()
 ```
 
 ## Model 2 (Emergent Trust) Data Management
 
-```{r M2Data}
+```{r M2Data, message=FALSE, warning=FALSE}
 
 pc1 <- principal(pcor1,1,residuals=TRUE,n.obs=Tdat.lwcN, scores = TRUE)
 pc1.wts <- as.data.frame(pc1$weights)
 str(pc1.wts)
 #pc1.wts
 Tdat$tx3.pc1 <- pc1.wts$PC1[1]*scale(Tdat$G) + pc1.wts$PC1[2]*scale(Tdat$U1) + pc1.wts$PC1[3]*scale(Tdat$R)
+Tdat <- Tdat[!is.na(Tdat$tx3.pc1),]
 ggplot(Tdat,aes(tx3.pc1)) + geom_histogram()
 
 ```
@@ -137,7 +138,7 @@ We need to model priors for each of the parameters of interest.  To simplify my 
 
 I have a binary DV (Behavioral Intent to Trust the Agent) that is coded as "1" for the person indicating the intent to trust the agent and as "0" for the the person indicating the intent NOT to trust the agent.  Given that coding, I envision a beta distribution with the following parameters:
 
-```{r DVpriors}
+```{r DVpriors, message=FALSE, warning=FALSE}
 # Assume a fixed N for hypothetical reasons:
 
 DVprior.dat <- data.frame(NTrust=0:16,
@@ -182,33 +183,27 @@ HINT2:
 I now shift my attention to coming up with priors for my paths between variables.  Each model has two paths that I must estimate.  
 
 
-```{r BRMSmodels}
+```{r BRMSmodels, message=FALSE, warning=FALSE}
 efa.fit <- brm(B ~ T * tx3.efa1 + (1 + T * tx3.efa1 | scen), 
                data=Tdat, family = bernoulli, 
-               prior = c(prior(normal(0, 2), class = Intercept),
-               prior(normal(0, 2), class = b)))
-summary(efa.fit)
-
+               prior = c(set_prior("normal(0, 1)", class = "Intercept"),
+               prior("normal(0, 1)", class = "b")))
+summary(efa.fit, waic=TRUE)
+#hypothesis(efa.fit, "")
+#stancode(efa.fit)
 pca.fit <- brm(B ~ T * tx3.pc1 + (1 + T * tx3.pc1 | scen), 
                data=Tdat, family = bernoulli, 
-               prior = c(prior(normal(0, 2), class = Intercept),
-               prior(normal(0, 2), class = b)))
-summary(pca.fit)
+               prior = c(prior("normal(0, 1)", class = "Intercept"),
+               prior("normal(0, 1)", class = "b")))
+summary(pca.fit, waic=TRUE)
+
 
 ```
 
 
-# The Stan Models
+## Model Comparison
 
-## Model 1: Stan Latent Trust
-
-```{r Model1Latent}
-# stan code for m1
-```
-
-## Model 2: Stan Emergent Trust
-
-```{r Model2Emergent}
-# stan code for m2
+```{r ModelComp}
+ LOO(efa.fit,pca.fit)
 ```
 
